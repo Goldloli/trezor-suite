@@ -10,6 +10,7 @@ import {
 import { Banner, Card, Column, InfoItem, Link, Tooltip } from '@trezor/components';
 import { BigNumber } from '@trezor/utils';
 
+import { StakePreparationError } from '#src/components/earn/forms/StakePreparationError';
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
 import { SolanaStakingLimitBanner } from '#src/components/suite/modals/ReduxModal/UserContextModal/SolanaStakingLimitBanner';
 import { Fees } from '#src/components/wallet/Fees/Fees';
@@ -218,17 +219,7 @@ export const UnstakeForm = () => {
                         {isCardanoNetwork && showError && (
                             <Banner intent="critical" description={inputError?.message} />
                         )}
-                        {hasComposeError && (
-                            <Banner
-                                intent="critical"
-                                description={<Translation id="TR_STAKING_ERROR_GENERIC" />}
-                                rightContent={
-                                    <Banner.Button onClick={() => retryCompose()}>
-                                        <Translation id="TR_RETRY" />
-                                    </Banner.Button>
-                                }
-                            />
-                        )}
+                        {hasComposeError && <StakePreparationError onRetry={retryCompose} />}
                     </Column>
                 ) : null}
             </Column>

@@ -1,11 +1,12 @@
 import { type UnknownAction } from '@reduxjs/toolkit';
 
 import { mockDesktopAnalytics } from '@suite/analytics/mocks';
-import { openModal } from '@suite/modal';
+import { closeModal, modalReducer, openModal, selectModal } from '@suite/modal';
 import { deviceInitialState } from '@suite-common/device';
 import { messageSystemInitialState } from '@suite-common/message-system';
 import { mockGetAccountSyncInterval } from '@suite-common/networks/mocks';
 import { mockSuiteDevice } from '@suite-common/suite-types/mocks';
+import { notificationsActions } from '@suite-common/toast-notifications';
 import { asNetworkSymbol } from '@suite-common/wallet-config';
 import {
     getStakeFormsDefaultValues,
@@ -27,6 +28,7 @@ import { mockWalletAccount } from '@suite-common/wallet-types/mocks';
 import TrezorConnect from '@trezor/connect';
 import { asGetter } from '@trezor/dependency-injection';
 import { createMockDispatch } from '@trezor/redux-utils/mocks';
+import { createDeferred } from '@trezor/utils';
 
 import {
     type SignTransactionThunkDeps,
@@ -97,19 +99,29 @@ const createStakeFlow = () => {
     const stakeReducer = prepareStakeReducer(undefined);
     let actions: unknown[] = [];
 
-    // The thunks read the stake state they themselves write, so the recorded actions are reduced
-    // through the real stake reducer. There is no selected account in this state at all.
-    const getState = () =>
-        ({
+    let stake = stakeInitialState;
+    let modal = modalReducer(undefined, { type: '' });
+    let reducedActions = 0;
+    const getState = () => {
+        for (const action of actions.slice(reducedActions) as UnknownAction[]) {
+            stake = stakeReducer(stake, action);
+            modal = modalReducer(modal, action);
+        }
+        reducedActions = actions.length;
+
+        return {
             device: { ...deviceInitialState, selectedDevice: mockSuiteDevice() },
             messageSystem: messageSystemInitialState,
+            modal,
             wallet: {
                 accounts: [account],
+                selectedAccount: { status: 'none' },
                 settings: initialWalletSettingsState,
-                stake: (actions as UnknownAction[]).reduce(stakeReducer, stakeInitialState),
+                stake,
                 transactions: transactionsInitialState,
             },
-        }) as unknown as SignTransactionThunkState;
+        } as SignTransactionThunkState;
+    };
 
     const extra: SignTransactionThunkDeps = {
         services: {
@@ -123,17 +135,19 @@ const createStakeFlow = () => {
     const mockDispatch = createMockDispatch({ getState, extra });
     actions = mockDispatch.actions;
 
-    return { ...mockDispatch, getState, extra };
+    const sign = (stakeForm = formValues) =>
+        signTransactionThunk({ accountKey: account.key, formValues: stakeForm, transactionInfo })(
+            mockDispatch.dispatch,
+            getState,
+            extra,
+        );
+
+    return { ...mockDispatch, getState, sign };
 };
 
 const signStakeTransaction = async (stakeForm = formValues) => {
     const flow = createStakeFlow();
-
-    await signTransactionThunk({ accountKey: account.key, formValues: stakeForm, transactionInfo })(
-        flow.dispatch,
-        flow.getState,
-        flow.extra,
-    );
+    await flow.sign(stakeForm);
 
     return flow;
 };
@@ -218,6 +232,73 @@ describe('signTransactionThunk', () => {
 
         expect(actions).toContainEqual(openModal({ type: 'unstake', accountKey: account.key }));
     });
+
+    it('keeps the original form open and allows retry after a preparation failure', async () => {
+        const { actions, dispatch, getState, sign } = createStakeFlow();
+        const modal = openModal({ type: 'unstake', accountKey: account.key });
+        dispatch(modal);
+        mockCardanoSignTransactionThunk.mockReturnValueOnce(() =>
+            Promise.reject(new Error('Rejected account payload')),
+        );
+
+        const unstakeForm = { ...formValues, stakeType: 'unstake' } as const;
+        await expect(sign(unstakeForm)).resolves.toBeUndefined();
+
+        expect(selectModal(getState())).toMatchObject({ payload: modal.payload, preserve: false });
+        expect(actions.filter(openModal.match)).toEqual([modal]);
+        expect(selectStake(getState()).precomposedTx).toBeUndefined();
+        expect(actions.filter(notificationsActions.addToast.match)).toEqual([
+            expect.objectContaining({
+                payload: expect.objectContaining({
+                    type: 'sign-tx-error',
+                    error: 'TR_STAKE_TX_PREPARATION_FAILED',
+                }),
+            }),
+        ]);
+        expect(pushTransactionMock).not.toHaveBeenCalled();
+
+        await expect(sign(unstakeForm)).resolves.toMatchObject({ success: true });
+        expect(pushTransactionMock).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['reopened form', 'newer signing attempt'])(
+        'ignores a late preparation failure after a %s',
+        async scenario => {
+            const { actions, dispatch, getState, sign } = createStakeFlow();
+            dispatch(openModal({ type: 'unstake', accountKey: account.key }));
+            const preparation = createDeferred<never>();
+            mockCardanoSignTransactionThunk.mockReturnValueOnce(() => preparation.promise);
+            const unstakeForm = { ...formValues, stakeType: 'unstake' } as const;
+            const attempt = sign(unstakeForm);
+            const newerPreparation = createDeferred<{ serializedTx: string }>();
+            let newerAttempt: ReturnType<typeof sign> | undefined;
+
+            if (scenario === 'newer signing attempt') {
+                mockCardanoSignTransactionThunk.mockReturnValueOnce(() => newerPreparation.promise);
+                newerAttempt = sign(unstakeForm);
+            } else {
+                dispatch(closeModal());
+                dispatch(openModal({ type: 'unstake', accountKey: account.key }));
+            }
+
+            const newerModal = selectModal(getState());
+            const activeRequest = selectStake(getState()).precomposedTx;
+            preparation.reject(new Error('Late failure'));
+            await attempt;
+
+            if (newerAttempt) {
+                expect(activeRequest).toBeDefined();
+                expect(selectStake(getState()).precomposedTx).toBe(activeRequest);
+                newerPreparation.resolve({ serializedTx: SIGNED_TX });
+                await expect(newerAttempt).resolves.toMatchObject({ success: true });
+                expect(pushTransactionMock).toHaveBeenCalledTimes(1);
+            } else {
+                expect(selectModal(getState())).toBe(newerModal);
+                expect(selectStake(getState()).precomposedTx).toBeUndefined();
+            }
+            expect(actions.filter(notificationsActions.addToast.match)).toHaveLength(0);
+        },
+    );
 
     it('reopens unstake for the same account after a broadcast failure', async () => {
         pushTransactionMock.mockResolvedValue({ success: false, error: { message: 'Rejected' } });

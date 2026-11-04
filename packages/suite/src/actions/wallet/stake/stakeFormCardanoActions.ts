@@ -305,7 +305,7 @@ const calculateOutputAmount = (account: Account, stakeType: StakeType, totalSpen
 };
 
 const getComposeErrorLevels = (
-    composeError: string,
+    composeError: string | undefined,
     symbol: NetworkSymbol,
     predefinedLevels: FeeLevel[],
 ): PrecomposedLevels => {
@@ -321,8 +321,8 @@ const getComposeErrorLevels = (
               }
             : {
                   type: 'error',
-                  error: 'TR_GENERIC_ERROR_TITLE',
-                  errorMessage: { id: 'TR_GENERIC_ERROR_TITLE' },
+                  error: 'TR_STAKE_TX_PREPARATION_FAILED',
+                  errorMessage: { id: 'TR_STAKE_TX_PREPARATION_FAILED' },
               };
 
     return Object.fromEntries(predefinedLevels.map(level => [level.label, errorLevel]));
@@ -337,6 +337,15 @@ export const composeTransactionThunk =
         const cardanoPools = selectCardanoPoolsInfo(getState());
         const votingDelegation = selectStakeVotingDelegation(getState());
         const protocolParameters = selectCardanoProtocolParameters(getState(), account.symbol);
+
+        if (
+            formValues.stakeType === 'change-delegate' &&
+            votingDelegation?.accountKey === account.key &&
+            votingDelegation.option.type === 'current' &&
+            hasCardanoLiveVoteDelegation(account)
+        ) {
+            return;
+        }
 
         const txData = await getTransactionData(formValues, {
             account,
@@ -360,11 +369,13 @@ export const composeTransactionThunk =
             });
         }
 
-        if (txPlan?.type === 'error') {
-            return getComposeErrorLevels(txPlan.error, account.symbol, predefinedLevels);
+        if (txPlan?.type !== 'final') {
+            return getComposeErrorLevels(
+                txPlan?.type === 'error' ? txPlan.error : undefined,
+                account.symbol,
+                predefinedLevels,
+            );
         }
-
-        if (txPlan?.type !== 'final') return;
 
         const amountAda = calculateOutputAmount(account, formValues.stakeType, txPlan?.totalSpent);
 

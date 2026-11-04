@@ -17,6 +17,7 @@ import { InfoIcon, WarningIcon } from '@trezor/icons';
 import { injectDispatch } from '@trezor/redux-utils';
 import { BigNumber } from '@trezor/utils';
 
+import { StakePreparationError } from '#src/components/earn/forms/StakePreparationError';
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
 import { FormattedCryptoAmount } from '#src/components/suite/FormattedCryptoAmount';
 import { SolanaStakingLimitBanner } from '#src/components/suite/modals/ReduxModal/UserContextModal/SolanaStakingLimitBanner';
@@ -49,6 +50,9 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
         changeFeeLevel,
         feeInfo,
         composedLevels,
+        selectedFee,
+        hasComposeError,
+        retryCompose,
         watch,
         isComposing,
         handleSubmit,
@@ -73,7 +77,11 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
 
     const isDeviceConnected = device?.connected && device?.available;
 
-    const isDisabled = !isFormInputsValid || isSubmitting || (isDeviceConnected && isLocked());
+    const isDisabled =
+        !isFormInputsValid ||
+        composedLevels?.[selectedFee]?.type !== 'final' ||
+        isSubmitting ||
+        (isDeviceConnected && isLocked());
     const isDiscoveryRunning = useSelector(selectHasRunningDiscovery);
 
     // cardano specific logic
@@ -305,6 +313,7 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
                         </>
                     )}
 
+                    {hasComposeError && <StakePreparationError onRetry={retryCompose} />}
                     {errors[CRYPTO_INPUT] && (
                         <Banner intent="critical" description={errors[CRYPTO_INPUT]?.message} />
                     )}

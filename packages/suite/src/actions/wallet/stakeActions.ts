@@ -1,12 +1,22 @@
 import { type Dispatch, type UnknownAction } from '@reduxjs/toolkit';
 import { type ThunkDispatch } from 'redux-thunk';
 
+import { type SelectedAccountRootState, selectSelectedAccountKey } from '@suite/account';
 import {
     type DesktopAnalyticsDep,
     type StakingCardanoPoolDelegationPayload,
     events,
 } from '@suite/analytics';
-import { closeModal, openDeferredModal, openModal, preserveModal } from '@suite/modal';
+import {
+    MODAL_CONTEXT_USER,
+    type ModalRootState,
+    closeModal,
+    openDeferredModal,
+    openModal,
+    preserveModal,
+    removePreserveModal,
+    selectModal,
+} from '@suite/modal';
 import { getTransactionCreatedEventPayload } from '@suite-common/analytics';
 import { type DeviceRootState, selectSelectedDevice } from '@suite-common/device';
 import {
@@ -282,6 +292,8 @@ const pushTransactionThunk =
 
 export type SignTransactionThunkState = DeviceRootState &
     EthereumGetCurrentNonceThunkState &
+    ModalRootState &
+    SelectedAccountRootState &
     MevProtectionRootState &
     ReplaceTransactionThunkState &
     StakeRootState &
@@ -308,6 +320,7 @@ export const signTransactionThunk =
 
         if (!device || !account) return;
 
+        const originalModal = selectModal(getState());
         const enhancedTxInfo: PrecomposedTransactionFinal = {
             ...transactionInfo,
         };
@@ -321,6 +334,8 @@ export const signTransactionThunk =
             }),
         );
 
+        const signingRequest = selectStake(getState()).precomposedTx;
+
         // TransactionReviewModal has 2 steps: signing and pushing
         // TrezorConnect emits UI_EVENTS.CLOSE_UI_WINDOW after the signing process
         // this action is blocked by preserveModal()
@@ -328,42 +343,73 @@ export const signTransactionThunk =
 
         // signTransaction by Trezor
         let serializedTx: undefined | string | Err<SerializedError>;
-        if (isSupportedEthStakingNetworkSymbol(account.symbol)) {
-            serializedTx = await dispatch(
-                stakeFormEthereumActions.signTransactionThunk({
-                    account,
-                    formValues,
-                    transactionInfo: enhancedTxInfo,
-                }),
-            );
-        }
-
-        if (isSupportedSolStakingNetworkSymbol(account.symbol)) {
-            serializedTx = await dispatch(
-                stakeFormSolanaActions.signTransactionThunk({
-                    account,
-                    formValues,
-                    transactionInfo: enhancedTxInfo,
-                }),
-            );
-        }
-
         let cardanoPoolDelegation: StakingCardanoPoolDelegationPayload | undefined;
-        if (isSupportedAdaStakingNetworkSymbol(account.symbol)) {
-            const signResult = await dispatch(
-                stakeFormCardanoActions.signTransactionThunk({
-                    account,
-                    formValues,
-                    transactionInfo: enhancedTxInfo,
+        try {
+            if (isSupportedEthStakingNetworkSymbol(account.symbol)) {
+                serializedTx = await dispatch(
+                    stakeFormEthereumActions.signTransactionThunk({
+                        account,
+                        formValues,
+                        transactionInfo: enhancedTxInfo,
+                    }),
+                );
+            }
+
+            if (isSupportedSolStakingNetworkSymbol(account.symbol)) {
+                serializedTx = await dispatch(
+                    stakeFormSolanaActions.signTransactionThunk({
+                        account,
+                        formValues,
+                        transactionInfo: enhancedTxInfo,
+                    }),
+                );
+            }
+
+            if (isSupportedAdaStakingNetworkSymbol(account.symbol)) {
+                const signResult = await dispatch(
+                    stakeFormCardanoActions.signTransactionThunk({
+                        account,
+                        formValues,
+                        transactionInfo: enhancedTxInfo,
+                    }),
+                );
+
+                if (signResult && 'serializedTx' in signResult) {
+                    serializedTx = signResult.serializedTx;
+                    cardanoPoolDelegation = signResult.poolDelegation;
+                } else {
+                    serializedTx = signResult;
+                }
+            }
+        } catch {
+            if (selectStake(getState()).precomposedTx !== signingRequest) return;
+
+            dispatch(stakeActions.dispose());
+
+            const modal = selectModal(getState());
+            // A late rejection must not unlock a replacement modal or notify a different account.
+            if (
+                originalModal.context !== MODAL_CONTEXT_USER ||
+                originalModal.payload.type !== formValues.stakeType ||
+                modal.context !== MODAL_CONTEXT_USER ||
+                modal.payload !== originalModal.payload ||
+                (originalModal.payload.type === 'unstake' &&
+                    originalModal.payload.accountKey !== accountKey) ||
+                (originalModal.payload.type === 'change-delegate' &&
+                    selectSelectedAccountKey(getState()) !== accountKey)
+            ) {
+                return;
+            }
+
+            dispatch(removePreserveModal());
+            dispatch(
+                notificationsActions.addToast({
+                    type: 'sign-tx-error',
+                    error: 'TR_STAKE_TX_PREPARATION_FAILED',
                 }),
             );
 
-            if (signResult && 'serializedTx' in signResult) {
-                serializedTx = signResult.serializedTx;
-                cardanoPoolDelegation = signResult.poolDelegation;
-            } else {
-                serializedTx = signResult;
-            }
+            return;
         }
 
         if (typeof serializedTx !== 'string') {
