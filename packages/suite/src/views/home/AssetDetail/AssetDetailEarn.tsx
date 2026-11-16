@@ -60,6 +60,8 @@ export const AssetDetailEarn = ({ assetKey }: AssetDetailEarnProps) => {
     // only part available.
     const isCardano = getNetworkType(networkSymbol) === 'cardano';
     const unstakedColor = isCardano ? UNSTAKED_COLOR : AVAILABLE_COLOR;
+    const hasAvailableOrStakedBalance =
+        isPositiveBalance(availableAmount) || isPositiveBalance(stakingAmount);
 
     return (
         <Box flex="1" minWidth={280}>
@@ -90,12 +92,15 @@ export const AssetDetailEarn = ({ assetKey }: AssetDetailEarnProps) => {
                                 <Translation id="TR_VIEW_ALL" />
                             </TextButton>
                         </Row>
-                        <SegmentedBar
-                            segments={[
-                                { value: 1 - stakingRatio, color: unstakedColor },
-                                { value: stakingRatio, color: STAKING_COLOR },
-                            ]}
-                        />
+                        {hasAvailableOrStakedBalance && (
+                            <SegmentedBar
+                                data-testid="@asset-detail/earn/allocation"
+                                segments={[
+                                    { value: 1 - stakingRatio, color: unstakedColor },
+                                    { value: stakingRatio, color: STAKING_COLOR },
+                                ]}
+                            />
+                        )}
                         <Row justifyContent="space-between" alignItems="center">
                             <Row gap={12} alignItems="center">
                                 <AssetDetailEarnLegendSquare color={unstakedColor} />
