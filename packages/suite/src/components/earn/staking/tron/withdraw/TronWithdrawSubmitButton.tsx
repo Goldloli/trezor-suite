@@ -17,12 +17,15 @@ export const TronWithdrawSubmitButton = () => {
     const { device, isLocked } = useDevice();
     const { analytics } = useServices(injectDesktopAnalytics);
     const isDiscoveryRunning = useSelector(selectHasRunningDiscovery);
-    const { account, actions } = useTronStakeContext();
+    const { account, actions, fees } = useTronStakeContext();
     const { isSubmitting, pendingTxid, submitAction } = actions;
 
-    const { isWithdrawingDisabled, withdrawingMessageContent } = useMessageSystemStaking(
-        account.symbol,
-    );
+    const {
+        isWithdrawingDisabled: isWithdrawingBlockedByMessageSystem,
+        withdrawingMessageContent,
+    } = useMessageSystemStaking(account.symbol);
+    const isWithdrawingDisabled =
+        isWithdrawingBlockedByMessageSystem || fees.composedLevels?.normal?.type !== 'final';
 
     const hasWithdrawableAmount = new BigNumber(getTronWithdrawableBalance(account)).gt(0);
     const isDeviceUnavailable = !!device?.connected && !!device?.available && isLocked();
