@@ -140,6 +140,7 @@ const dispatchCompose = async (
 };
 
 beforeEach(() => {
+    jest.mocked(fetchAndUpdateAccountThunk).mockClear();
     blockchainGetInfoMock.mockReset();
     blockchainGetInfoMock.mockResolvedValue({
         success: false,
@@ -311,10 +312,49 @@ describe('composeSolanaStakingTransactionFeeLevelsThunk', () => {
         expect(result.ok).toBe(true);
         const levels = (result as { payload: Record<string, any> }).payload;
         expect(levels.normal.type).toBe('final');
-        // applySolanaTxMeta overrides the fee with feeIncludingRentLamports
         expect(levels.normal.fee).toBe('2287880');
         expect(levels.normal.solanaTxMeta.feeIncludingRentLamports).toBe('2287880');
     });
+
+    it.each(['65001', '65002'])(
+        'checks the encoded claim fee against %s lamports',
+        async availableBalance => {
+            blockchainEstimateFeeMock.mockResolvedValueOnce({
+                success: true,
+                payload: {
+                    levels: [{ feePerUnit: '300000.25', feeLimit: '200003', feePerTx: '65001' }],
+                },
+            });
+            prepareClaimSolTxMock.mockResolvedValue({
+                success: true,
+                txShim: solanaTxShim,
+                solanaTxMeta: {
+                    ...solanaTxMetaMock,
+                    rentLamports: '0',
+                    feeLamports: '65002',
+                    feeIncludingRentLamports: '65002',
+                },
+            });
+
+            const store = buildStore({ accounts: [{ ...solAccount, availableBalance }] });
+            const result = await dispatchCompose(store, {
+                accountKey: SOL_ACCOUNT_KEY,
+                stakeType: 'claim',
+                amount: '1',
+            });
+
+            expect(result).toEqual({
+                ok: true,
+                payload: {
+                    normal: expect.objectContaining(
+                        availableBalance === '65002'
+                            ? { type: 'final', fee: '65002' }
+                            : { type: 'error', error: 'AMOUNT_NOT_ENOUGH_CURRENCY_FEE' },
+                    ),
+                },
+            });
+        },
+    );
 
     it('omits newAccountProgramName when an unstake only deactivates (creates no stake account)', async () => {
         // A plain deactivate reserves no rent, so the fee estimate must not add a phantom rent reserve.
@@ -426,11 +466,11 @@ describe('composeSolanaStakingTransactionFeeLevelsThunk', () => {
         });
     });
 
-    it('reports a failed preparation as such instead of as an insufficient fee', async () => {
+    it('reports an unexpected preparation failure instead of an insufficient fee', async () => {
         prepareClaimSolTxMock.mockResolvedValue({
             success: false,
             errorCode: 'UNKNOWN',
-            errorMessage: 'Solana staking: claiming failed - Nothing to claim while claiming',
+            errorMessage: 'RPC request failed',
         });
         const store = buildStore();
 
@@ -448,6 +488,7 @@ describe('composeSolanaStakingTransactionFeeLevelsThunk', () => {
             errorMessage: { id: 'TR_STAKE_TX_PREPARATION_FAILED' },
         });
         expect(blockchainEstimateFeeMock).not.toHaveBeenCalled();
+        expect(fetchAndUpdateAccountThunk).not.toHaveBeenCalled();
     });
 
     it('reports an unstake above the active stake as a changed staked balance and refreshes the account', async () => {
@@ -473,6 +514,7 @@ describe('composeSolanaStakingTransactionFeeLevelsThunk', () => {
         });
         expect(fetchAndUpdateAccountThunkMock).toHaveBeenCalledWith({
             accountKey: SOL_ACCOUNT_KEY,
+            forceFullRefresh: true,
         });
     });
 
@@ -523,4 +565,44 @@ describe('composeSolanaStakingTransactionFeeLevelsThunk', () => {
             },
         });
     });
+
+    it.each([false, true])(
+        'blocks a claim that is no longer available (fee-aware: %s)',
+        async feeAware => {
+            if (feeAware) {
+                prepareClaimSolTxMock.mockResolvedValueOnce({
+                    success: true,
+                    txShim: solanaTxShim,
+                    solanaTxMeta: { ...solanaTxMetaMock, rentLamports: '0' },
+                });
+            }
+            prepareClaimSolTxMock.mockResolvedValueOnce({
+                success: false,
+                errorCode: 'NO_CLAIMABLE_STAKE',
+                errorMessage: 'No stake is currently available to claim.',
+            });
+
+            const result = await dispatchCompose(buildStore(), {
+                accountKey: SOL_ACCOUNT_KEY,
+                stakeType: 'claim',
+                amount: '1',
+            });
+
+            expect(result).toEqual({
+                ok: true,
+                payload: {
+                    normal: {
+                        type: 'error',
+                        error: 'TR_STAKE_SOL_NOTHING_TO_CLAIM',
+                        errorMessage: { id: 'TR_STAKE_SOL_NOTHING_TO_CLAIM' },
+                    },
+                },
+            });
+            expect(fetchAndUpdateAccountThunk).toHaveBeenCalledTimes(1);
+            expect(fetchAndUpdateAccountThunk).toHaveBeenCalledWith({
+                accountKey: SOL_ACCOUNT_KEY,
+                forceFullRefresh: true,
+            });
+        },
+    );
 });

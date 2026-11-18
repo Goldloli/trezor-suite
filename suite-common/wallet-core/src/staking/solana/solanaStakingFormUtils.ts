@@ -115,7 +115,6 @@ const applySolanaTxMeta = (
                         key,
                         {
                             ...nextTx,
-                            fee: solanaTxMeta.feeIncludingRentLamports,
                             totalSpent,
                         },
                     ];
@@ -204,6 +203,7 @@ export const prepareSolanaStakeTxData = async ({
 const PREPARATION_ERROR_MESSAGES = {
     INSUFFICIENT_ACTIVE_STAKE: 'TR_STAKE_SOL_STAKED_BALANCE_CHANGED',
     INVALID_FEE: 'TR_STAKE_SOL_FEE_ESTIMATE_INVALID',
+    NO_CLAIMABLE_STAKE: 'TR_STAKE_SOL_NOTHING_TO_CLAIM',
     UNKNOWN: 'TR_STAKE_TX_PREPARATION_FAILED',
 } as const;
 
@@ -224,6 +224,11 @@ const buildPreparationFailedLevels = (
 export const hasStakedBalanceChangedError = (levels?: PrecomposedLevels) =>
     Object.values(levels ?? {}).some(
         level => level.type === 'error' && level.error === 'TR_STAKE_SOL_STAKED_BALANCE_CHANGED',
+    );
+
+export const hasNoClaimableStakeError = (levels?: PrecomposedLevels) =>
+    Object.values(levels ?? {}).some(
+        level => level.type === 'error' && level.error === 'TR_STAKE_SOL_NOTHING_TO_CLAIM',
     );
 
 type ComposeSolanaStakingTransactionParams = {
@@ -270,37 +275,56 @@ export const composeSolanaStakingTransaction = async ({
 
     const estimatedFee = await estimateSolanaStakeFee(account.symbol, txData);
 
+    const txDataWithFee =
+        estimatedFee.success && estimatedFee.payload
+            ? await prepareSolanaStakeTxData({
+                  from: account.descriptor,
+                  symbol: account.symbol,
+                  amount,
+                  stakeType,
+                  blockchainUrl,
+                  userAgent,
+                  source,
+                  estimatedFee: estimatedFee.payload,
+              })
+            : undefined;
+
+    const errorCode = txDataWithFee?.success === false ? txDataWithFee.errorCode : undefined;
+    if (
+        errorCode === 'INVALID_FEE' ||
+        errorCode === 'NO_CLAIMABLE_STAKE' ||
+        errorCode === 'INSUFFICIENT_ACTIVE_STAKE'
+    ) {
+        return buildPreparationFailedLevels(predefinedLevels, errorCode);
+    }
+
+    const solanaTxMeta = txDataWithFee?.success ? txDataWithFee.solanaTxMeta : undefined;
+    // The encoded priority fee can differ from the estimate after rounding.
+    const effectiveFee: EstimatedFee =
+        solanaTxMeta && estimatedFee.success && estimatedFee.payload
+            ? {
+                  success: true,
+                  payload: {
+                      ...estimatedFee.payload,
+                      feePerTx: solanaTxMeta.feeIncludingRentLamports,
+                  },
+              }
+            : estimatedFee;
     const composed = composeStakingTransaction(
         formValues,
         composeContext,
         predefinedLevels,
-        (...args) => calculateSolanaStakeTransaction(txData.solanaTxMeta.rentLamports, ...args),
-        estimatedFee,
+        (...args) =>
+            calculateSolanaStakeTransaction(
+                solanaTxMeta?.rentLamports ?? txData.solanaTxMeta.rentLamports,
+                ...args,
+            ),
+        effectiveFee,
         undefined,
     );
     if (!composed) return undefined;
 
-    if (estimatedFee.success && estimatedFee.payload) {
-        const txDataWithFee = await prepareSolanaStakeTxData({
-            from: account.descriptor,
-            symbol: account.symbol,
-            amount,
-            stakeType,
-            blockchainUrl,
-            userAgent,
-            source,
-            estimatedFee: estimatedFee.payload,
-        });
-
-        if (txDataWithFee?.success) {
-            return applySolanaTxMeta(composed, txDataWithFee.solanaTxMeta);
-        }
-
-        if (txDataWithFee?.errorCode === 'INVALID_FEE') {
-            return buildPreparationFailedLevels(predefinedLevels, txDataWithFee.errorCode);
-        }
-    }
-
-    // Fee estimation or the fee-aware preparation failed, keep the review-only flag of the first tx.
-    return applyDeviceReviewOnly(composed, txData.solanaTxMeta.hasSplitInstruction);
+    return solanaTxMeta
+        ? applySolanaTxMeta(composed, solanaTxMeta)
+        : applyDeviceReviewOnly(composed, txData.solanaTxMeta.hasSplitInstruction);
 };

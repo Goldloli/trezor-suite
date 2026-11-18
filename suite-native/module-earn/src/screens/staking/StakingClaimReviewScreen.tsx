@@ -56,7 +56,6 @@ export const StakingClaimReviewScreen = () => {
     const account = useSelector((state: AccountsRootState) =>
         selectAccountByKey(state, accountKey),
     );
-
     const { position, totals, access } = useStakingAccountPosition(accountKey);
 
     const canClaimInstantly = isStakingOperationAvailable({
@@ -68,6 +67,8 @@ export const StakingClaimReviewScreen = () => {
         amount: totals.withdrawable,
         networkSymbol: symbol,
     });
+    const hasNoClaimableSolanaStake =
+        account?.networkType === 'solana' && !isPositiveBalance(claimableAmount);
 
     const claimFormState = useMemo(() => {
         if (!account) return undefined;
@@ -181,6 +182,14 @@ export const StakingClaimReviewScreen = () => {
                         label={<Translation id="earn.claimReviewScreen.amountLabel" />}
                         cryptoAmount={claimableAmount}
                     />
+                    {hasNoClaimableSolanaStake && (
+                        <BannerInline
+                            intent="info"
+                            title={
+                                <Translation id="transactionManagement.precomposedTransaction.errors.solanaStakingNothingToClaim" />
+                            }
+                        />
+                    )}
                     <EarnFeeSection
                         accountKey={accountKey}
                         fees={{
@@ -192,6 +201,7 @@ export const StakingClaimReviewScreen = () => {
                             formDraft,
                             formDraftKey,
                         }}
+                        isHidden={hasNoClaimableSolanaStake}
                     />
                     {canClaimInstantly && isFeeReady && (
                         <BannerInline

@@ -18,9 +18,17 @@ type EarnFeeSectionProps = {
     accountKey: AccountKey;
     fees: EarnFees;
     tokenContract?: TokenAddress;
+    isHidden?: boolean;
 };
 
-export const EarnFeeSection = ({ accountKey, fees, tokenContract }: EarnFeeSectionProps) => {
+export const EarnFeeSection = ({
+    accountKey,
+    fees,
+    tokenContract,
+    isHidden,
+}: EarnFeeSectionProps) => {
+    if (isHidden) return null;
+
     if (fees.hasFeeEstimationError) {
         return <EarnFeeEstimationErrorAlert onRetry={fees.retryFeeEstimation} />;
     }
