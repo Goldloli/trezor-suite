@@ -13,6 +13,8 @@ import {
 import { calculateTotalGasCost, fromHex, isEip1559 } from '@suite-common/wallet-utils';
 import { BigNumber } from '@trezor/utils';
 
+import { shouldReplaceEarnCustomFee } from './shouldReplaceEarnCustomFee';
+
 type ParsedUnsignedEvmTransaction = NonNullable<
     ReturnType<typeof parseUnsignedEvmTransactionForSigning>
 >;
@@ -295,9 +297,11 @@ export const buildPreparedTxFeeDraftState = ({
             isPreparedTxEip1559FeeInfo(feeLevelParams.feeInfo),
         );
         // An amount change may need more gas than the confirmed Custom limit.
-        const isCustomFeeReplaced =
-            feeState.selectedFee === 'custom' &&
-            new BigNumber(currentFormDraft?.feeLimit ?? 0).lt(feeLevelParams.gasLimit);
+        const isCustomFeeReplaced = shouldReplaceEarnCustomFee(
+            feeState.selectedFee,
+            currentFormDraft?.feeLimit,
+            feeLevelParams.gasLimit,
+        );
         const selectedFee = isCustomFeeReplaced ? 'normal' : feeState.selectedFee;
 
         const selectedFeeUnsignedTransaction = buildPreparedTxSelectedFeeUnsignedTransaction({

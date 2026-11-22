@@ -40,6 +40,7 @@ import { useEarnFeeAnalytics } from './useEarnFeeAnalytics';
 import { useEarnFeeEstimationError } from './useEarnFeeEstimationError';
 import { EARN_MODULE_PREFIX } from '../../constants';
 import { type EarnFormDraftPrefix } from '../../types';
+import { shouldReplaceEarnCustomFee } from '../../utils/earn/shouldReplaceEarnCustomFee';
 
 export type UpdateEarnSelectedFeeLevelThunkState = FormDraftRootState & NativeSendRootState;
 
@@ -94,6 +95,8 @@ export const useComposeEarnFees = ({
     } = useFormDraft<FormState>(formDraftPrefix, accountKey);
     const [isComposingFeeLevels, setIsComposingFeeLevels] = useState(true);
     const requestIdRef = useRef(0);
+    const [isCustomFeeReplaced, setIsCustomFeeReplaced] = useState(false);
+    const onFeeConfirmed = useCallback(() => setIsCustomFeeReplaced(false), []);
     const [composedForm, setComposedForm] = useState<UseComposeEarnFeesParams>();
     const {
         feeEstimationRetryKey,
@@ -190,15 +193,44 @@ export const useComposeEarnFees = ({
                     return;
                 }
 
-                dispatch(
-                    transactionManagementActions.storeFeeLevels({
-                        feeLevels: response.payload,
-                    }),
-                );
+                const { normal: normalLevel, custom: customLevel } = response.payload;
+                const normalGasLimit =
+                    normalLevel.type !== 'error' ? normalLevel.estimatedFeeLimit : undefined;
+                const customGasLimit =
+                    customLevel?.type !== 'error' ? customLevel?.estimatedFeeLimit : undefined;
+                const currentSelectedFee = latestDraft?.selectedFee ?? mergedFormState.selectedFee;
+                const replaceCustom =
+                    account.networkType === 'ethereum' &&
+                    shouldReplaceEarnCustomFee(
+                        currentSelectedFee,
+                        mergedFormState.feeLimit,
+                        normalGasLimit ?? customGasLimit,
+                    );
 
+                const composedLevels = { ...response.payload };
+                if (replaceCustom) {
+                    delete composedLevels.custom;
+                    setIsCustomFeeReplaced(true);
+                }
+                dispatch(
+                    transactionManagementActions.storeFeeLevels({ feeLevels: composedLevels }),
+                );
                 setComposedForm({ accountKey, formDraftPrefix, formState });
 
-                const normalLevel = response.payload.normal;
+                if (replaceCustom && isFinalPrecomposedTransaction(normalLevel)) {
+                    saveDraft({
+                        ...mergedFormState,
+                        selectedFee: 'normal',
+                        feePerUnit: normalLevel.feePerByte,
+                        feeLimit: normalLevel.feeLimit ?? '',
+                        maxFeePerGas: normalLevel.maxFeePerGas,
+                        maxPriorityFeePerGas: normalLevel.maxPriorityFeePerGas,
+                        estimatedFeeLimit: normalLevel.estimatedFeeLimit,
+                    });
+
+                    return;
+                }
+
                 if (!mergedFormState.feePerUnit && isFinalPrecomposedTransaction(normalLevel)) {
                     mergedFormState.feePerUnit = normalLevel.feePerByte;
                 }
@@ -206,7 +238,7 @@ export const useComposeEarnFees = ({
                 // Read the live selection even if its React update has not rendered yet.
                 saveDraft({
                     ...mergedFormState,
-                    selectedFee: latestDraft?.selectedFee ?? mergedFormState.selectedFee,
+                    selectedFee: replaceCustom ? 'normal' : currentSelectedFee,
                 });
             } catch {
                 const latestDraft = selectDeepCopyOfFormDraft(getState(), formDraftKey) as
@@ -243,6 +275,7 @@ export const useComposeEarnFees = ({
     );
 
     useEffect(() => {
+        setIsCustomFeeReplaced(false);
         removeDraft();
     }, [removeDraft]);
 
@@ -314,6 +347,8 @@ export const useComposeEarnFees = ({
         retryFeeEstimation: retryWithAnalytics,
         isComposingFeeLevels: isCurrentFeeComposing,
         isFeeReady,
+        isCustomFeeReplaced,
+        onFeeConfirmed,
         updateFeeLevelThunk: updateEarnSelectedFeeLevelThunk,
     };
 };

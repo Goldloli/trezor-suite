@@ -96,6 +96,8 @@ export const StakingClaimReviewScreen = () => {
         isComposingFeeLevels,
         retryFeeEstimation,
         isFeeReady,
+        isCustomFeeReplaced,
+        onFeeConfirmed,
         updateFeeLevelThunk,
     } = useComposeEarnFees({
         accountKey,
@@ -181,6 +183,8 @@ export const StakingClaimReviewScreen = () => {
                             hasFeeEstimationError,
                             isComposingFeeLevels,
                             retryFeeEstimation,
+                            isCustomFeeReplaced,
+                            onFeeConfirmed,
                             updateFeeLevelThunk,
                             selectedFee: formDraft?.selectedFee ?? 'normal',
                             formDraft,

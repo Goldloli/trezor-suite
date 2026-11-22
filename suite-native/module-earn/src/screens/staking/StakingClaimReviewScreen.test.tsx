@@ -138,6 +138,8 @@ const createFeeState = (): ReturnType<typeof useComposeEarnFees> => ({
     hasFeeEstimationError: false,
     retryFeeEstimation: jest.fn(),
     isComposingFeeLevels: false,
+    isCustomFeeReplaced: false,
+    onFeeConfirmed: jest.fn(),
     isFeeReady: true,
     updateFeeLevelThunk: updateEarnSelectedFeeLevelThunk,
 });

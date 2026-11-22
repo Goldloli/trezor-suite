@@ -595,6 +595,76 @@ describe('useComposeEarnFees recovery', () => {
         },
     );
 
+    it.each([
+        ['21000', 'custom'],
+        ['50000', 'normal'],
+    ] as const)(
+        'keeps or replaces a confirmed Custom staking fee with a new %s gas estimate',
+        async (estimatedFeeLimit, selectedFee) => {
+            const { result, rerender, store } = await renderFees();
+            await settleDebounce();
+            const customDraft = {
+                ...result.current.formDraft!,
+                selectedFee: 'custom' as const,
+                feePerUnit: '5',
+                feeLimit: '22000',
+            };
+            await act(() => {
+                store.dispatch(
+                    formDraftActions.storeDraft({
+                        key: result.current.formDraftKey,
+                        formDraft: customDraft,
+                    }),
+                );
+            });
+            await settleDebounce();
+
+            await rerender({
+                accountKey: ACCOUNT.key,
+                formState: undefined,
+                formDraftPrefix: 'stake',
+            });
+            await settleDebounce();
+            expect(result.current.formDraft?.selectedFee).toBe('custom');
+            expect(result.current.isFeeReady).toBe(false);
+
+            const nextAmount = buildEarnComposeFormState(FORM_STATE.outputs[0]!.address, '2', '0x');
+            const normal = { ...FEE_LEVELS.normal, estimatedFeeLimit, feeLimit: estimatedFeeLimit };
+            const custom = { ...normal, feePerByte: '5', feeLimit: customDraft.feeLimit };
+            mockCompose
+                .mockResolvedValueOnce(rejected())
+                .mockResolvedValueOnce(fulfilled({ normal, custom }))
+                .mockResolvedValue(
+                    fulfilled(selectedFee === 'normal' ? { normal } : { normal, custom }),
+                );
+            await rerender({
+                accountKey: ACCOUNT.key,
+                formState: nextAmount,
+                formDraftPrefix: 'stake',
+            });
+            await settleDebounce();
+            expect(result.current.hasFeeEstimationError).toBe(true);
+            expect(result.current.formDraft?.selectedFee).toBe('custom');
+            await act(() => result.current.retryFeeEstimation());
+
+            await settleDebounce();
+            await settleDebounce();
+
+            expect(result.current.isFeeReady).toBe(true);
+            expect(result.current.formDraft?.selectedFee).toBe(selectedFee);
+            expect(result.current.formDraft?.feeLimit).toBe(
+                selectedFee === 'normal' ? estimatedFeeLimit : customDraft.feeLimit,
+            );
+            expect(result.current.isCustomFeeReplaced).toBe(selectedFee === 'normal');
+            expect(store.getState().wallet.send.feeLevels.custom).toEqual(
+                selectedFee === 'normal' ? undefined : custom,
+            );
+
+            await act(() => result.current.onFeeConfirmed());
+            expect(result.current.isCustomFeeReplaced).toBe(false);
+        },
+    );
+
     it('keeps the Custom preview local and uses the confirmed fee in staking Review', async () => {
         const store = createTestStore();
         const props: FeeFlowProps = {

@@ -96,6 +96,8 @@ export const UnstakeFlowScreen = () => {
         isComposingFeeLevels,
         retryFeeEstimation,
         isFeeReady,
+        isCustomFeeReplaced,
+        onFeeConfirmed,
         updateFeeLevelThunk,
         approximatedInstantEthAmount,
     } = unstakeForm;
@@ -216,6 +218,8 @@ export const UnstakeFlowScreen = () => {
                                 hasFeeEstimationError,
                                 isComposingFeeLevels,
                                 retryFeeEstimation,
+                                isCustomFeeReplaced,
+                                onFeeConfirmed,
                                 updateFeeLevelThunk,
                                 selectedFee: formDraft?.selectedFee ?? 'normal',
                                 formDraft,

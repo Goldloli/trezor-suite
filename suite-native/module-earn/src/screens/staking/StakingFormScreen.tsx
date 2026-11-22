@@ -106,6 +106,8 @@ export const StakingFormScreen = () => {
         isComposingFeeLevels,
         retryFeeEstimation,
         isFeeReady,
+        isCustomFeeReplaced,
+        onFeeConfirmed,
         updateFeeLevelThunk,
     } = stakingForm;
     const {
@@ -191,6 +193,8 @@ export const StakingFormScreen = () => {
                                 hasFeeEstimationError,
                                 isComposingFeeLevels,
                                 retryFeeEstimation,
+                                isCustomFeeReplaced,
+                                onFeeConfirmed,
                                 updateFeeLevelThunk,
                                 selectedFee: formDraft?.selectedFee ?? 'normal',
                                 formDraft,
