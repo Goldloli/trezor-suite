@@ -13,6 +13,7 @@ import type { CardanoStakingInfo } from './cardano';
 /* Shared types — canonical definitions used by both common and backend-specific modules */
 
 export interface SolanaStakingAccount {
+    address?: string;
     status: string;
     stake?: string;
     rentExemptReserve: string;

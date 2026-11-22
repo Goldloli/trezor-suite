@@ -109,6 +109,7 @@ export const getSolanaStakingData = async (
                 const activationEpoch = fields[1]?.delegation?.activationEpoch;
 
                 return {
+                    address: account.address,
                     rentExemptReserve: fields[0]?.rentExemptReserve.toString(),
                     stake: fields[1]?.delegation?.stake.toString(),
                     status: stakeState,

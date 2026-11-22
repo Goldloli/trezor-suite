@@ -9,6 +9,7 @@ import {
     stakeTransactionFixtures,
 } from './__fixtures__/staking.fixture';
 import {
+    getSolanaStakingData,
     prepareClaimSolTx,
     prepareStakeSolTx,
     prepareUnstakeSolTx,
@@ -39,6 +40,21 @@ describe('selectSolanaValidator', () => {
             const result = selectSolanaValidator(fixture.symbol);
             expect(result).toBe(fixture.result);
         });
+    });
+});
+
+describe('Solana staking discovery', () => {
+    it('retains the stake account addresses in the discovery snapshot', async () => {
+        const { rpcResults } = stakeTransactionFixtures.claim;
+        const accounts = await getSolanaStakingData(
+            mockConnection(rpcResults),
+            mockSender,
+            rpcResults.getEpochInfo.epoch,
+        );
+
+        expect(accounts.map(account => account.address)).toEqual(
+            rpcResults.getProgramAccounts.map(account => account.pubkey),
+        );
     });
 });
 

@@ -719,6 +719,22 @@ describe(getDirectRpcHistoryState.name, () => {
 });
 
 describe(isAccountOutdated.name, () => {
+    it('detects a different external stake account with the same status and balance', () => {
+        const originalAccount = mockSolanaStakingAccount('everstakeAndExternal');
+        const stake = { ...originalAccount.misc!.solExternalStakingAccounts![0]!, address: 'a' };
+        const account = {
+            ...originalAccount,
+            misc: { ...originalAccount.misc, solExternalStakingAccounts: [stake] },
+        };
+
+        expect(
+            isAccountOutdated(account, {
+                ...account,
+                misc: { ...account.misc, solExternalStakingAccounts: [{ ...stake, address: 'b' }] },
+            }),
+        ).toBe(true);
+    });
+
     it('ignores reordered Solana stake accounts while still detecting changed balances', () => {
         const account = mockSolanaStakingAccount('mixed');
         const stakes = account.misc?.solStakingAccounts ?? [];

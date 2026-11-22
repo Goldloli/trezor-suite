@@ -26,6 +26,7 @@ import type { tokenProgramNames } from '../constants';
 export type TokenProgramName = (typeof tokenProgramNames)[number];
 
 export interface SolanaStakingAccount {
+    address?: string;
     status: string;
     stake?: string;
     rentExemptReserve: string;

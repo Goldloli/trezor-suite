@@ -23,6 +23,7 @@ import {
     type FormState,
     isFinalPrecomposedTransaction,
 } from '@suite-common/wallet-types';
+import { haveSolanaStakingAccountsChanged } from '@suite-common/wallet-utils';
 import {
     type NativeSendRootState,
     type UpdateSelectedFeeLevelThunkParams,
@@ -35,6 +36,7 @@ import {
 import { useServices } from '@trezor/dependency-injection';
 import { useDebounce } from '@trezor/react-utils';
 import { createThunk, injectDispatch, injectGetState } from '@trezor/redux-utils';
+import { deepEqual } from '@trezor/utils';
 
 import { useEarnFeeAnalytics } from './useEarnFeeAnalytics';
 import { useEarnFeeEstimationError } from './useEarnFeeEstimationError';
@@ -101,11 +103,36 @@ export const useComposeEarnFees = ({
         retryFeeEstimation,
         setHasFeeEstimationError,
     } = useEarnFeeEstimationError(formDraftKey);
-    const account = useSelector((state: AccountsRootState) =>
-        selectAccountByKey(state, accountKey),
+    const isClaim = formDraftPrefix === 'claim';
+    const account = useSelector(
+        (state: AccountsRootState) => selectAccountByKey(state, accountKey),
+        // Discovery may replace the account without changing the payer or the stake accounts.
+        // The composer reads the latest account and queries the staking instructions on demand.
+        (previous, current) =>
+            previous === current ||
+            (isClaim &&
+                previous?.networkType === 'solana' &&
+                current?.networkType === 'solana' &&
+                previous.key === current.key &&
+                previous.symbol === current.symbol &&
+                previous.descriptor === current.descriptor &&
+                previous.availableBalance === current.availableBalance &&
+                !haveSolanaStakingAccountsChanged(
+                    previous.misc?.solStakingAccounts ?? [],
+                    current.misc?.solStakingAccounts ?? [],
+                ) &&
+                !haveSolanaStakingAccountsChanged(
+                    previous.misc?.solExternalStakingAccounts ?? [],
+                    current.misc?.solExternalStakingAccounts ?? [],
+                )),
     );
-    const feeInfo = useSelector((state: FeesRootState) =>
-        selectConvertedNetworkFeeInfo(state, account?.symbol),
+    const feeInfo = useSelector(
+        (state: FeesRootState) => selectConvertedNetworkFeeInfo(state, account?.symbol),
+        (previous, current) =>
+            previous === current ||
+            (isClaim &&
+                account?.networkType === 'solana' &&
+                deepEqual(previous?.levels, current?.levels)),
     );
     const feeLevels = useSelector((state: NativeSendRootState) => selectFeeLevels(state));
     const isCurrentComposition =

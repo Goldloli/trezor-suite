@@ -763,11 +763,11 @@ export const getDirectRpcHistoryState = (account: Account): DirectRpcHistoryStat
 
 type SolanaStakingAccounts = NonNullable<AccountInfo['misc']>['solStakingAccounts'];
 
-const haveSolanaStakingAccountsChanged = (
+export const haveSolanaStakingAccountsChanged = (
     storedAccounts: SolanaStakingAccounts,
     freshAccounts: SolanaStakingAccounts,
 ) => {
-    if (!freshAccounts) return false;
+    if (!freshAccounts || freshAccounts === storedAccounts) return false;
     if (storedAccounts?.length !== freshAccounts.length) return true;
 
     // RPC responses can contain the same accounts in a different order.
@@ -866,6 +866,10 @@ export const isAccountOutdated = (account: Account, freshInfo: AccountInfo) => {
                 haveSolanaStakingAccountsChanged(
                     account.misc?.solStakingAccounts,
                     freshInfo.misc?.solStakingAccounts,
+                ) ||
+                haveSolanaStakingAccountsChanged(
+                    account.misc?.solExternalStakingAccounts,
+                    freshInfo.misc?.solExternalStakingAccounts,
                 ) ||
                 // compare token count (detect added/removed tokens)
                 freshInfo.tokens?.length !== account.tokens?.length
