@@ -44,8 +44,16 @@ export const useYieldPendingTransaction = ({
         pendingTransaction,
         transactionType,
     );
-    const { displayedPendingTransaction, isSheetPresented, handleSheetDismissed } =
-        useYieldPendingSheet(matchingPendingTransaction);
+    const {
+        displayedPendingTransaction,
+        isPendingSheetVisible,
+        isSheetPresented,
+        handleSheetDismissed,
+    } = useYieldPendingSheet({
+        pendingTransaction: matchingPendingTransaction,
+        accountKey,
+        isFocused,
+    });
     const { explorerUrl, openInBlockchain } = useYieldPendingTransactionDetails({
         accountKey: accountKey ?? null,
         txid: displayedPendingTransaction?.txid ?? null,
@@ -66,14 +74,14 @@ export const useYieldPendingTransaction = ({
             : null;
 
     useEffect(() => {
-        if (!isFocused || matchingPendingTransaction === undefined) {
+        if (!isFocused || !isPendingSheetVisible) {
             closePendingBottomSheet();
 
             return;
         }
 
         openPendingBottomSheet();
-    }, [closePendingBottomSheet, isFocused, matchingPendingTransaction, openPendingBottomSheet]);
+    }, [closePendingBottomSheet, isFocused, isPendingSheetVisible, openPendingBottomSheet]);
 
     return {
         displayedPendingTransaction,

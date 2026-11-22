@@ -182,8 +182,16 @@ export const useYieldWithdrawController = () => {
     const pendingTransaction = session?.action.pendingTransaction ?? null;
     const { actionPendingTransaction } = splitYieldPendingTransaction(pendingTransaction, flowType);
     const isWithdrawPending = !!actionPendingTransaction;
-    const { displayedPendingTransaction, isSheetPresented, handleSheetDismissed } =
-        useYieldPendingSheet(actionPendingTransaction);
+    const {
+        displayedPendingTransaction,
+        isPendingSheetVisible,
+        isSheetPresented,
+        handleSheetDismissed,
+    } = useYieldPendingSheet({
+        pendingTransaction: actionPendingTransaction,
+        accountKey: account?.key,
+        isFocused,
+    });
     const { explorerUrl, openInBlockchain } = useYieldPendingTransactionDetails({
         accountKey: account?.key ?? null,
         txid: displayedPendingTransaction?.txid ?? null,
@@ -207,14 +215,14 @@ export const useYieldWithdrawController = () => {
     });
 
     useEffect(() => {
-        if (!isFocused || !isWithdrawPending) {
+        if (!isFocused || !isPendingSheetVisible) {
             closePendingBottomSheet();
 
             return;
         }
 
         openPendingBottomSheet();
-    }, [closePendingBottomSheet, isFocused, isWithdrawPending, openPendingBottomSheet]);
+    }, [closePendingBottomSheet, isFocused, isPendingSheetVisible, openPendingBottomSheet]);
 
     useEffect(() => {
         // Wait for sheet dismissal to avoid a Fabric crash (see useYieldPendingSheet).

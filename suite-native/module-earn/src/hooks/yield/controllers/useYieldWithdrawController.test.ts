@@ -84,6 +84,7 @@ const withdrawFees = {
 
 const pendingSheet: ReturnType<typeof useYieldPendingSheet> = {
     displayedPendingTransaction: undefined,
+    isPendingSheetVisible: false,
     isSheetPresented: false,
     handleSheetDismissed: jest.fn(),
 };

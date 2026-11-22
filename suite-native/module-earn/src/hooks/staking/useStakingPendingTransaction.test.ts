@@ -1,46 +1,42 @@
+import { combineReducers } from '@reduxjs/toolkit';
 import { getDefaultStore } from 'jotai';
 
-import { type WalletAccountTransaction } from '@suite-common/wallet-types';
-import { mockAccountKey } from '@suite-common/wallet-types/mocks';
+import { asNetworkSymbol } from '@suite-common/wallet-config';
 import {
-    type Alert,
-    type AlertType,
-    alertAtom,
-    hideAlertAtom,
-    showAlertAtom,
-} from '@suite-native/alerts';
+    feesReducer,
+    fetchAndUpdateAccountThunk,
+    prepareTransactionsReducer,
+    transactionsActions,
+} from '@suite-common/wallet-core';
+import { mockEthereumStakingTransaction } from '@suite-common/wallet-core/mocks';
+import { type FeesState, type WalletAccountTransaction } from '@suite-common/wallet-types';
+import { mockWalletAccount } from '@suite-common/wallet-types/mocks';
+import { type Alert, alertAtom, hideAlertAtom, showAlertAtom } from '@suite-native/alerts';
 import {
     AppTabsRoutes,
     RootStackRoutes,
     type StakingPendingTxParams,
     TransactionDetailStackRoutes,
 } from '@suite-native/navigation';
-import { act, renderHookWithStoreProvider } from '@suite-native/test-utils-store';
+import {
+    act,
+    createLightStore,
+    createStaticReducer,
+    renderHookWithStoreProvider,
+} from '@suite-native/test-utils-store';
+import { mockActionType, mockReducer } from '@trezor/redux-utils/mocks';
 
 import { useStakingPendingTransaction } from './useStakingPendingTransaction';
 import { type EarnFormDraftPrefix } from '../../types';
 
 type MockTransaction = Pick<WalletAccountTransaction, 'txid' | 'blockHeight' | 'type' | 'deadline'>;
 
-const mockDispatch = jest.fn();
-const mockShowAlert = jest.fn();
-const mockHideAlert = jest.fn();
 const mockNavigation = { dispatch: jest.fn() };
 const mockOpenInBlockchain = jest.fn();
 const mockPendingSheet = jest.fn();
 const mockBottomSheetRef = { current: null };
-const mockFeeInfo = { blockTime: 12 };
-let mockTransaction: MockTransaction | null = null;
 let mockIsFocused = true;
 
-jest.mock('@trezor/dependency-injection', () => ({
-    ...jest.requireActual('@trezor/dependency-injection'),
-    useServices: () => ({ dispatch: mockDispatch }),
-}));
-jest.mock('@suite-native/alerts', () => ({
-    ...jest.requireActual('@suite-native/alerts'),
-    useAlert: () => ({ showAlert: mockShowAlert, hideAlert: mockHideAlert }),
-}));
 jest.mock('@react-navigation/native', () => ({
     ...jest.requireActual('@react-navigation/native'),
     useNavigation: () => mockNavigation,
@@ -48,10 +44,10 @@ jest.mock('@react-navigation/native', () => ({
 }));
 jest.mock('@suite-common/wallet-core', () => ({
     ...jest.requireActual('@suite-common/wallet-core'),
-    fetchAndUpdateAccountThunk: (payload: unknown) => ({ type: 'test/fetch-account', payload }),
-    selectAccountNetworkSymbol: () => 'eth',
-    selectConvertedNetworkFeeInfo: () => mockFeeInfo,
-    selectTransactionByAccountKeyAndTxid: () => mockTransaction,
+    fetchAndUpdateAccountThunk: jest.fn((payload: unknown) => ({
+        type: 'test/fetch-account',
+        payload,
+    })),
 }));
 jest.mock('../earn/useEarnPendingTransactionSheet', () => ({
     useEarnPendingTransactionSheet: (params: unknown) => {
@@ -65,7 +61,10 @@ jest.mock('../earn/useEarnPendingTransactionSheet', () => ({
     },
 }));
 
-const accountKey = mockAccountKey({ descriptor: 'testAccountKey' });
+const account = mockWalletAccount({ symbol: asNetworkSymbol('eth') });
+const accountKey = account.key;
+const fetchAccount = jest.mocked(fetchAndUpdateAccountThunk);
+const getAlert = () => getDefaultStore().get(alertAtom);
 const pendingTransaction: StakingPendingTxParams = {
     amountInBaseUnits: '1000000000000000000',
     fee: '21000',
@@ -75,13 +74,86 @@ const pendingTransaction: StakingPendingTxParams = {
 const POLL_INTERVAL_MS = 6_000;
 const MISSING_TRANSACTION_GRACE_MS = 120_000;
 
-const renderPendingTransaction = (
+const transactionsReducer = prepareTransactionsReducer({
+    actionTypes: { storageLoad: mockActionType('storageLoad') },
+    reducers: { storageLoadTransactions: mockReducer() },
+});
+const fees: FeesState = {
+    eth: {
+        status: 'loaded',
+        data: {
+            blockHeight: 0,
+            blockTime: 12,
+            minFee: 0,
+            maxFee: 0,
+            minPriorityFee: 0,
+            levels: [],
+        },
+    },
+};
+
+const renderPendingTransaction = async (
     routeParam: StakingPendingTxParams | undefined,
     stakeType: EarnFormDraftPrefix = 'stake',
-) =>
-    renderHookWithStoreProvider(() =>
-        useStakingPendingTransaction({ accountKey, pendingTransaction: routeParam, stakeType }),
-    );
+    initialTransaction: MockTransaction | null = null,
+) => {
+    const store = createLightStore({
+        reducer: {
+            discreetMode: createStaticReducer({ isActive: false }),
+            locale: createStaticReducer({ systemLocaleCode: 'en', appLocaleCode: 'system' }),
+            wallet: combineReducers({
+                settings: createStaticReducer({
+                    localCurrency: 'usd',
+                    bitcoinAmountUnit: 0,
+                    addressDisplayType: 'chunked',
+                }),
+                accounts: createStaticReducer([account]),
+                fees: feesReducer,
+                transactions: transactionsReducer,
+            }),
+        },
+        preloadedState: { wallet: { fees } },
+    });
+    const updateTransaction = (transaction: MockTransaction | null) => {
+        if (!transaction) {
+            store.dispatch(
+                transactionsActions.removeTransaction({
+                    account,
+                    txs: [{ txid: pendingTransaction.txid }],
+                }),
+            );
+
+            return;
+        }
+
+        const fixture = mockEthereumStakingTransaction({
+            account,
+            stakeType: 'stake',
+            isPending: transaction.blockHeight === 0,
+        });
+        store.dispatch(
+            transactionsActions.addTransaction({
+                account,
+                transactions: [{ ...fixture, ...transaction }],
+            }),
+        );
+    };
+
+    if (initialTransaction) updateTransaction(initialTransaction);
+
+    return {
+        ...(await renderHookWithStoreProvider(
+            () =>
+                useStakingPendingTransaction({
+                    accountKey,
+                    pendingTransaction: routeParam,
+                    stakeType,
+                }),
+            { services: { store } },
+        )),
+        updateTransaction,
+    };
+};
 
 const homeRoutes = [
     { name: RootStackRoutes.AppTabs, params: { screen: AppTabsRoutes.EarnStack } },
@@ -92,15 +164,8 @@ describe('useStakingPendingTransaction', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         getDefaultStore().set(alertAtom, null);
-        mockShowAlert.mockImplementation((alert: Alert) =>
-            getDefaultStore().set(showAlertAtom, alert),
-        );
-        mockHideAlert.mockImplementation((type?: AlertType) =>
-            getDefaultStore().set(hideAlertAtom, type),
-        );
         jest.useFakeTimers();
         jest.setSystemTime(pendingTransaction.submittedAt);
-        mockTransaction = null;
         mockIsFocused = true;
     });
 
@@ -113,7 +178,7 @@ describe('useStakingPendingTransaction', () => {
         await act(() => jest.advanceTimersByTime(POLL_INTERVAL_MS));
 
         expect(result.current).toEqual({ isPending: false, pendingModal: null });
-        expect(mockDispatch).not.toHaveBeenCalled();
+        expect(fetchAccount).not.toHaveBeenCalled();
         expect(mockNavigation.dispatch).not.toHaveBeenCalled();
     });
 
@@ -123,8 +188,11 @@ describe('useStakingPendingTransaction', () => {
     ] as const)(
         'polls the account and exposes the sheet while the transaction %s',
         async (_, transaction) => {
-            mockTransaction = transaction;
-            const { result } = await renderPendingTransaction(pendingTransaction);
+            const { result } = await renderPendingTransaction(
+                pendingTransaction,
+                'stake',
+                transaction,
+            );
 
             expect(result.current).toEqual({
                 isPending: true,
@@ -138,11 +206,8 @@ describe('useStakingPendingTransaction', () => {
 
             await act(() => jest.advanceTimersByTime(POLL_INTERVAL_MS * 2));
 
-            expect(mockDispatch).toHaveBeenCalledTimes(2);
-            expect(mockDispatch).toHaveBeenCalledWith({
-                type: 'test/fetch-account',
-                payload: { accountKey },
-            });
+            expect(fetchAccount).toHaveBeenCalledTimes(2);
+            expect(fetchAccount).toHaveBeenCalledWith({ accountKey });
             expect(mockNavigation.dispatch).not.toHaveBeenCalled();
         },
     );
@@ -153,20 +218,17 @@ describe('useStakingPendingTransaction', () => {
         await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS - 1));
 
         expect(result.current.isPending).toBe(true);
-        expect(mockShowAlert).not.toHaveBeenCalled();
+        expect(getAlert()).toBeNull();
 
         await act(() => jest.advanceTimersByTime(1));
 
         expect(result.current).toEqual({ isPending: false, pendingModal: null });
-        expect(mockShowAlert).toHaveBeenCalledTimes(1);
+        expect(getAlert()?.type).toBe('earnTransactionNotConfirmed');
 
-        mockDispatch.mockClear();
+        fetchAccount.mockClear();
         await act(() => jest.advanceTimersByTime(POLL_INTERVAL_MS));
 
-        expect(mockDispatch).toHaveBeenCalledWith({
-            type: 'test/fetch-account',
-            payload: { accountKey },
-        });
+        expect(fetchAccount).toHaveBeenCalledWith({ accountKey });
         expect(mockNavigation.dispatch).not.toHaveBeenCalled();
     });
 
@@ -180,13 +242,12 @@ describe('useStakingPendingTransaction', () => {
         await renderPendingTransaction(pendingTransaction);
         await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS));
 
-        expect(getDefaultStore().get(alertAtom)).toBe(otherAlert);
-        expect(mockShowAlert).not.toHaveBeenCalled();
+        expect(getAlert()).toBe(otherAlert);
 
         await act(() => getDefaultStore().set(hideAlertAtom, 'deviceError'));
 
-        expect(getDefaultStore().get(alertAtom)?.type).toBe('stakingTransactionNotConfirmed');
-        expect(mockShowAlert).toHaveBeenCalledTimes(1);
+        expect(getDefaultStore().get(alertAtom)?.type).toBe('earnTransactionNotConfirmed');
+        expect(getAlert()?.type).toBe('earnTransactionNotConfirmed');
     });
 
     it.each([undefined, 'deviceError'] as const)(
@@ -198,7 +259,7 @@ describe('useStakingPendingTransaction', () => {
             await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS));
             await act(() => getDefaultStore().set(hideAlertAtom, oldAlert));
             const warning = getDefaultStore().get(alertAtom);
-            expect(warning?.type).toBe('stakingTransactionNotConfirmed');
+            expect(warning?.type).toBe('earnTransactionNotConfirmed');
 
             await act(() => getDefaultStore().set(hideAlertAtom, oldAlert));
 
@@ -217,28 +278,23 @@ describe('useStakingPendingTransaction', () => {
     });
 
     it('takes the alert down when the missing transaction confirms after all', async () => {
-        const { rerender } = await renderPendingTransaction(pendingTransaction);
+        const { updateTransaction } = await renderPendingTransaction(pendingTransaction);
         await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS));
 
-        expect(mockShowAlert).toHaveBeenCalledTimes(1);
-        expect(mockHideAlert).not.toHaveBeenCalled();
+        expect(getAlert()?.type).toBe('earnTransactionNotConfirmed');
+        await act(() => updateTransaction({ txid: '0xabc', blockHeight: 100, type: 'sent' }));
 
-        mockTransaction = { txid: '0xabc', blockHeight: 100, type: 'sent' };
-        await rerender({});
-
-        expect(mockHideAlert).toHaveBeenCalledTimes(1);
-        expect(mockHideAlert).toHaveBeenCalledWith('stakingTransactionNotConfirmed');
+        expect(getAlert()).toBeNull();
         expect(mockNavigation.dispatch).toHaveBeenCalledTimes(1);
     });
 
     it('keeps a new review open when a missing transaction confirms in the background', async () => {
-        const { rerender } = await renderPendingTransaction(pendingTransaction);
+        const { rerender, updateTransaction } = await renderPendingTransaction(pendingTransaction);
         await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS));
 
         mockIsFocused = false;
         await rerender({});
-        mockTransaction = { txid: '0xabc', blockHeight: 100, type: 'sent' };
-        await rerender({});
+        await act(() => updateTransaction({ txid: '0xabc', blockHeight: 100, type: 'sent' }));
 
         expect(mockNavigation.dispatch).not.toHaveBeenCalled();
 
@@ -248,53 +304,58 @@ describe('useStakingPendingTransaction', () => {
     });
 
     it('keeps the old pending sheet closed while another review is focused', async () => {
-        const { rerender } = await renderPendingTransaction(pendingTransaction);
+        const { rerender, updateTransaction } = await renderPendingTransaction(pendingTransaction);
         await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS));
         mockIsFocused = false;
-        mockTransaction = { txid: '0xabc', blockHeight: 0, type: 'sent' };
         await rerender({});
+        await act(() => updateTransaction({ txid: '0xabc', blockHeight: 0, type: 'sent' }));
         expect(mockPendingSheet).toHaveBeenLastCalledWith(
             expect.objectContaining({ isPending: false }),
         );
     });
 
     it('does not repeat a dismissed alert when the same transaction disappears again', async () => {
-        const { result, rerender } = await renderPendingTransaction(pendingTransaction);
+        const { result, updateTransaction } = await renderPendingTransaction(pendingTransaction);
         await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS));
 
-        await act(() => mockShowAlert.mock.calls[0][0].onPressPrimaryButton());
+        await act(() => getDefaultStore().set(hideAlertAtom, 'earnTransactionNotConfirmed'));
 
-        mockTransaction = { txid: '0xabc', blockHeight: 0, type: 'sent' };
-        await rerender({});
+        await act(() => updateTransaction({ txid: '0xabc', blockHeight: 0, type: 'sent' }));
         expect(result.current.isPending).toBe(true);
 
-        mockTransaction = null;
-        await rerender({});
+        await act(() => updateTransaction(null));
 
         expect(result.current.isPending).toBe(false);
-        expect(mockShowAlert).toHaveBeenCalledTimes(1);
+        expect(getAlert()).toBeNull();
     });
 
     it.each([undefined, 1000])(
         'keeps a pending account entry locked past the grace period (deadline: %s)',
         async deadline => {
-            mockTransaction = { txid: '0xabc', blockHeight: 0, type: 'sent', deadline };
-            const { result } = await renderPendingTransaction(pendingTransaction);
+            const { result } = await renderPendingTransaction(pendingTransaction, 'stake', {
+                txid: '0xabc',
+                blockHeight: 0,
+                type: 'sent',
+                deadline,
+            });
 
             await act(() => jest.advanceTimersByTime(MISSING_TRANSACTION_GRACE_MS * 2));
 
             expect(result.current.isPending).toBe(true);
-            expect(mockShowAlert).not.toHaveBeenCalled();
+            expect(getAlert()).toBeNull();
         },
     );
 
     it('resets to the complete screen once the transaction confirms', async () => {
-        mockTransaction = { txid: '0xabc', blockHeight: 100, type: 'sent' };
-        const { result } = await renderPendingTransaction(pendingTransaction, 'unstake');
+        const { result } = await renderPendingTransaction(pendingTransaction, 'unstake', {
+            txid: '0xabc',
+            blockHeight: 100,
+            type: 'sent',
+        });
         await act(() => jest.advanceTimersByTime(POLL_INTERVAL_MS));
 
         expect(result.current).toEqual({ isPending: false, pendingModal: null });
-        expect(mockDispatch).not.toHaveBeenCalled();
+        expect(fetchAccount).not.toHaveBeenCalled();
         expect(mockNavigation.dispatch).toHaveBeenCalledTimes(1);
         expect(mockNavigation.dispatch).toHaveBeenCalledWith({
             type: 'RESET',
@@ -316,8 +377,11 @@ describe('useStakingPendingTransaction', () => {
     });
 
     it('opens the transaction detail when the confirmed transaction failed on-chain', async () => {
-        mockTransaction = { txid: '0xabc', blockHeight: 100, type: 'failed' };
-        await renderPendingTransaction(pendingTransaction);
+        await renderPendingTransaction(pendingTransaction, 'stake', {
+            txid: '0xabc',
+            blockHeight: 100,
+            type: 'failed',
+        });
 
         expect(mockNavigation.dispatch).toHaveBeenCalledTimes(1);
         expect(mockNavigation.dispatch).toHaveBeenCalledWith({

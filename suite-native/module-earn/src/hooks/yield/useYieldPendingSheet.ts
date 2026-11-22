@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
-import { type YieldPendingTransactionState } from '@suite-common/wallet-core';
+import {
+    type TransactionsRootState,
+    type YieldPendingTransactionState,
+    selectAccountTransactions,
+} from '@suite-common/wallet-core';
+import { type AccountKey } from '@suite-common/wallet-types';
+import { findTrackedEvmTransaction } from '@suite-common/wallet-utils';
 import { usePreviousDefined } from '@trezor/react-utils';
+
+import { useEarnMissingTransaction } from '../earn/useEarnMissingTransaction';
 
 // Generous next to the ~250ms dismissal: this only backstops a dismissal that never reports.
 const SHEET_DISMISS_TIMEOUT_MS = 1_000;
@@ -18,11 +27,39 @@ const SHEET_DISMISS_TIMEOUT_MS = 1_000;
  * Callers keep the sheet rendered from `displayedPendingTransaction`, hold their
  * `navigation.replace` while `isSheetPresented`, and pass `handleSheetDismissed` to the sheet.
  */
-export const useYieldPendingSheet = (
-    actionPendingTransaction: YieldPendingTransactionState | undefined,
-) => {
-    const previousPendingTransaction = usePreviousDefined(actionPendingTransaction);
-    const isPending = !!actionPendingTransaction;
+type UseYieldPendingSheetParams = {
+    pendingTransaction: YieldPendingTransactionState | undefined;
+    accountKey: AccountKey | null | undefined;
+    isFocused: boolean;
+};
+
+export const useYieldPendingSheet = ({
+    pendingTransaction,
+    accountKey,
+    isFocused,
+}: UseYieldPendingSheetParams) => {
+    const txid = pendingTransaction?.txid;
+    const nonce = pendingTransaction?.nonce;
+    const hasTrackedTransaction = useSelector((state: TransactionsRootState) =>
+        txid && accountKey
+            ? !!findTrackedEvmTransaction({
+                  transactions: selectAccountTransactions(state, accountKey),
+                  txid,
+                  nonce,
+              })
+            : false,
+    );
+    const isMissing = useEarnMissingTransaction({
+        txid: accountKey ? txid : undefined,
+        submittedAt: pendingTransaction?.submittedAt,
+        hasTrackedTransaction,
+        isFocused,
+    });
+
+    // Keep the session's pending transaction and submission guards while releasing its sheet.
+    const visiblePendingTransaction = isMissing ? undefined : pendingTransaction;
+    const previousPendingTransaction = usePreviousDefined(visiblePendingTransaction);
+    const isPending = !!visiblePendingTransaction;
     const [isSheetPresented, setIsSheetPresented] = useState(false);
 
     useEffect(() => {
@@ -49,7 +86,8 @@ export const useYieldPendingSheet = (
     return {
         // Keeps the sheet's values after the store clears them, so it can stay rendered while it
         // dismisses rather than vanishing mid-animation.
-        displayedPendingTransaction: actionPendingTransaction ?? previousPendingTransaction,
+        displayedPendingTransaction: visiblePendingTransaction ?? previousPendingTransaction,
+        isPendingSheetVisible: isPending,
         isSheetPresented,
         handleSheetDismissed,
     };
