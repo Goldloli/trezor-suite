@@ -7,6 +7,7 @@ export const TRADING_FORM_SECTION_COMPONENT = 'TradingFormSection';
 type TradingFormSectionProps = {
     title?: ReactNode;
     errorMessage?: string;
+    onErrorClick?: () => void;
     children: ReactNode;
     'data-testid'?: string;
 };
@@ -14,6 +15,7 @@ type TradingFormSectionProps = {
 export const TradingFormSection = ({
     title,
     errorMessage,
+    onErrorClick,
     children,
     'data-testid': dataTestId,
 }: TradingFormSectionProps) => (
@@ -33,6 +35,7 @@ export const TradingFormSection = ({
                     <Badge
                         intent="critical"
                         size="small"
+                        onClick={onErrorClick}
                         data-testid={dataTestId && `${dataTestId}/error`}
                     >
                         {errorMessage}

@@ -21,6 +21,10 @@ import {
     validateReserveOrBalance,
 } from '#src/utils/suite/validation';
 
+export const TRADING_FIAT_MIN_RULE = 'minFiat';
+export const TRADING_FIAT_MAX_RULE = 'maxFiat';
+export const TRADING_CRYPTO_LIMITS_RULE = 'limits';
+
 type FiatInputRulesProps = {
     translationString: TranslationFunction;
     amountLimits: AmountLimitProps | undefined;
@@ -46,7 +50,7 @@ export const getFiatInputRules = ({
         validate: {
             min: validateMin(translationString),
             decimals: validateDecimals(translationString, { decimals: fiatInputDecimals }),
-            minFiat: (value: string) => {
+            [TRADING_FIAT_MIN_RULE]: (value: string) => {
                 if (
                     value &&
                     amountLimits?.minFiat &&
@@ -61,7 +65,7 @@ export const getFiatInputRules = ({
                     });
                 }
             },
-            maxFiat: (value: string) => {
+            [TRADING_FIAT_MAX_RULE]: (value: string) => {
                 if (
                     value &&
                     amountLimits?.maxFiat &&
@@ -111,7 +115,7 @@ export const getCryptoInputRules = ({
         min: validateMin(translationString),
         integer: validateInteger(translationString, { except: !shouldSendInSats }),
         decimals: validateDecimals(translationString, { decimals }),
-        limits: validateCryptoLimits(translationString, {
+        [TRADING_CRYPTO_LIMITS_RULE]: validateCryptoLimits(translationString, {
             amountLimits,
             areSatsUsed: !!shouldSendInSats,
             formatter,
