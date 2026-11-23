@@ -27,11 +27,26 @@ describe(sendFeedbackThunk.typePrefix, () => {
     afterEach(() => jest.restoreAllMocks());
 
     it('fulfills a submission accepted by the feedback endpoint', async () => {
-        jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
+        const fetch = jest
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(new Response(null, { status: 204 }));
         const { actions, dispatch } = createMockDispatch({ getState: () => ({}), extra: {} });
 
-        const result = await dispatch(sendFeedbackThunk(feedback));
+        const result = await dispatch(
+            sendFeedbackThunk({
+                ...feedback,
+                payload: {
+                    ...feedback.payload,
+                    feature: 'yield',
+                    context: 'claim',
+                    tokenSymbols: ['MORPHO', 'USDC'],
+                },
+            }),
+        );
 
+        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('tokenSymbols=MORPHO%2CUSDC'), {
+            method: 'GET',
+        });
         expect(sendFeedbackThunk.fulfilled.match(result)).toBe(true);
         expect(actions).toContainEqual(
             expect.objectContaining({
