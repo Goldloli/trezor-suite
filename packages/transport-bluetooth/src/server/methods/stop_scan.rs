@@ -1,12 +1,13 @@
-use btleplug::api::Central;
-use log::info;
-
 use crate::server::{
     adapter_manager::AdapterManager,
     types::{AbortProcess, ChannelMessage, MethodResult, WsResponsePayload},
 };
 
 pub async fn stop_scan(manager: AdapterManager) -> MethodResult {
+    // the queue only: the flag changes in order with the other discovery calls
+    let queue = manager
+        .lock_discovery_queue_for_request("stop_scan")
+        .await?;
     // Notify the watcher of every connection. The scan may have been started
     // by another client whose start_scan loop listens on its own channel only,
     // and would keep running (and spawn a duplicate on the next start_scan).
@@ -14,22 +15,12 @@ pub async fn stop_scan(manager: AdapterManager) -> MethodResult {
         .send_to_listeners(ChannelMessage::Abort(AbortProcess::Scan))
         .await;
 
-    // Reset the flag right away — it must not stay set when the adapter call
-    // below fails.
+    // Reset the flag right away. The adapter stop can wait for a connection,
+    // and the flag must not stay set when the adapter call fails.
     manager.set_scanning(false).await;
 
-    // Without an adapter there is no scan to stop. Not `get_powered_adapter_or_die`:
-    // it reports `AdapterDisabled` and starts the always-retrying adapter loader.
-    let success = match manager.get_adapter_or_die().await {
-        Ok(adapter) => match adapter.stop_scan().await {
-            Ok(_) => true,
-            Err(err) => {
-                info!("stop_scan/adapter.stop_scan error: {err}");
-                false
-            }
-        },
-        Err(_) => true,
-    };
+    // Also without the flag: a stop that failed before must stay retryable.
+    let success = manager.stop_adapter_scan("stop_scan", queue).await;
 
     manager.clear_serviceless_devices().await;
 

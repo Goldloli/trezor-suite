@@ -38,29 +38,57 @@ async fn stop_scanning(adapter: &Adapter, manager: &AdapterManager) {
 }
 
 pub async fn start_scan(manager: AdapterManager, broadcast: ConnectionBroadcast) -> MethodResult {
-    let adapter = manager.get_powered_adapter_or_die().await?;
-
-    if manager.is_scanning().await {
-        info!("AdapterManager is already scanning");
-        let devices = manager.get_devices().await;
-        return Ok(WsResponsePayload::Peripherals { devices });
-    } else {
-        manager.set_scanning(true).await;
+    let mut radio = manager
+        .lock_discovery_queue_for_request("start_scan")
+        .await?;
+    if !manager.has_listener(&broadcast).await {
+        return Err(AdapterError::ClientDisconnected.into());
     }
 
-    // let the_task = broadcast.get_abortable_task("get_abortable_task".to_string());
+    // AdapterManager resets the flag when the adapter turns off, nothing else
+    // sets it while the queue is held, so this single read is authoritative.
+    if manager.is_scanning().await {
+        info!("AdapterManager is already scanning");
+        drop(radio);
+        let devices = manager.get_devices().await;
+        return Ok(WsResponsePayload::Peripherals { devices });
+    }
+
+    // a running scan only returns the list, so only a real start needs the radio
+    manager
+        .wait_for_discovery_radio(&mut radio, "start_scan")
+        .await?;
+
+    // The radio wait can take DISCOVERY_REQUEST_WAIT. Requests are not cancelled on
+    // disconnect, so without this check a scan would be started for a client
+    // that left, and the last-listener cleanup would stop it right after.
+    if !manager.has_listener(&broadcast).await {
+        return Err(AdapterError::ClientDisconnected.into());
+    }
+
+    let mut receiver = broadcast.subscribe();
+    let adapter = manager.get_powered_adapter_or_die().await?;
+
     // start or restart scanning process
     // restart (stop/start) ensures that the event stream is really running in
     // workaround for https://github.com/deviceplug/btleplug/issues/255
     // windows: calling adapter.stop_scan breaks current broadcast.subscribe stream
     if let Err(err) = start_scanning(&adapter, &manager).await {
         stop_scanning(&adapter, &manager).await;
-        manager.set_scanning(false).await;
         return Err(err.into());
+    }
+    // The adapter can turn off between the start above and this flag. The
+    // event of that turn resets a flag that is not set yet, so the flag is
+    // set only next to the state and the started scan is stopped here.
+    if !manager.mark_scanning_started().await {
+        info!("Adapter turned off during the scan start, stopping it");
+        stop_scanning(&adapter, &manager).await;
+        return Ok(WsResponsePayload::Peripherals {
+            devices: manager.get_devices().await,
+        });
     }
 
     // listen for Abort and AdapterStateChanged messages from the other threads
-    let mut receiver = broadcast.subscribe();
     tokio::spawn(async move {
         loop {
             let event = match receiver.recv().await {
@@ -94,6 +122,7 @@ pub async fn start_scan(manager: AdapterManager, broadcast: ConnectionBroadcast)
         }
         info!("start_scan loop done");
     });
+    drop(radio);
 
     // wait for first discovery events and enumerate
     sleep(Duration::from_millis(200)).await;
