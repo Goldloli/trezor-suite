@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
 import { type Rating, ratingOptions } from '@suite-common/feedback';
 import { Card, Column, Flex, H3, IconCircle, Paragraph, Row } from '@trezor/components';
@@ -16,7 +16,7 @@ export type FeedbackCardProps = {
     cancelLabel: ReactNode;
     successHeading: ReactNode;
     successDescription: ReactNode;
-    onSubmit: (rating: Rating, description: string) => void;
+    onSubmit: (rating: Rating, description: string) => void | Promise<void>;
     onRatingSelect?: (rating: Rating) => void;
     defaultView?: FeedbackCardView;
     /** Puts the ratings under the heading instead of across the card from it. */
@@ -38,28 +38,46 @@ export const FeedbackCard = ({
     const [rating, setRating] = useState<Rating | undefined>();
     const [feedbackText, setFeedbackText] = useState('');
     const [view, setView] = useState<FeedbackCardView>(defaultView);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const submissionPending = useRef(false);
 
     const isFormValid = rating !== undefined && feedbackText.trim().length > 0;
 
     const handleRatingSelect = (selectedRating: Rating) => {
+        if (submissionPending.current) return;
+
         setRating(selectedRating);
         onRatingSelect?.(selectedRating);
     };
 
     const handleCancel = () => {
+        setIsFormOpen(false);
+        if (submissionPending.current) return;
+
         setRating(undefined);
         setFeedbackText('');
     };
 
-    const handleSubmit = () => {
-        if (!isFormValid) {
-            return;
-        }
+    const handleSubmit = async () => {
+        if (!isFormValid || submissionPending.current) return;
 
-        onSubmit(rating, feedbackText);
-        setView('success');
-        setRating(undefined);
-        setFeedbackText('');
+        submissionPending.current = true;
+        setIsSubmitting(true);
+
+        try {
+            const submission = onSubmit(rating, feedbackText);
+            if (submission) await submission;
+            setView('success');
+            setIsFormOpen(false);
+            setRating(undefined);
+            setFeedbackText('');
+        } catch {
+            // Keep the draft available for retry after the caller reports the error.
+        } finally {
+            submissionPending.current = false;
+            setIsSubmitting(false);
+        }
     };
 
     if (view === 'success') {
@@ -91,13 +109,16 @@ export const FeedbackCard = ({
                     <EmojiRatingSelector
                         options={ratingOptions}
                         value={rating}
-                        onChange={handleRatingSelect}
+                        onChange={selectedRating => {
+                            handleRatingSelect(selectedRating);
+                            setIsFormOpen(true);
+                        }}
                         data-testid="@feedback/card/rating"
                     />
                 </Flex>
             </Card>
 
-            {rating !== undefined && (
+            {isFormOpen && rating !== undefined && (
                 <FeedbackFormModal
                     heading={heading}
                     description={description}
@@ -106,9 +127,10 @@ export const FeedbackCard = ({
                     rating={rating}
                     feedbackText={feedbackText}
                     isSubmitDisabled={!isFormValid}
+                    isSubmitting={isSubmitting}
                     onRatingSelect={handleRatingSelect}
                     onFeedbackTextChange={setFeedbackText}
-                    onSubmit={handleSubmit}
+                    onSubmit={() => void handleSubmit()}
                     onCancel={handleCancel}
                 />
             )}
