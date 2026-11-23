@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.5.2
+
+- fix: linux, discovery (start_scan, stop_scan) no longer overlaps with connect_device. Discovery calls wait for running connections and connections wait for a running discovery, connections to different devices still run in parallel.
+- fix: scan flag is reset when the adapter is turned off, so the scan started after the adapter is enabled again is not skipped.
+- fix: stop_scan without an adapter succeeds and does not start the adapter loader.
+
 ### 0.5.1
 
 - fix: DeviceConnected notification when discovered device is already connected and paired.
