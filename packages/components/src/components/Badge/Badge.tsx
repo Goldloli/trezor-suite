@@ -5,7 +5,9 @@ import styled, { css, keyframes } from 'styled-components';
 import { type BadgeIntent, type BadgeSize } from './types';
 import {
     mapIntentToBackgroundColor,
+    mapIntentToHoveredBackgroundColor,
     mapIntentToIconColor,
+    mapIntentToPressedBackgroundColor,
     mapSizeToIconSize,
     mapSizeToPadding,
     mapSizeToTypographyStyle,
@@ -17,6 +19,7 @@ import {
     withFrameProps,
 } from '../../utils/frameProps';
 import { type TransientProps } from '../../utils/transientProps';
+import { commonFocusStyles } from '../../utils/utils';
 import { Row } from '../Flex/Flex';
 import { Icon, type IconComponent } from '../Icon/Icon';
 import { Text, type TextPriority } from '../typography/Text/Text';
@@ -50,12 +53,37 @@ export const allowedBadgeFrameProps = ['margin', 'cursor'] as const satisfies Fr
 type AllowedFrameProps = Pick<FrameProps, (typeof allowedBadgeFrameProps)[number]>;
 
 const Container = styled.div<
-    TransientProps<AllowedFrameProps> & { $intent: BadgeIntent; $isAnimated: boolean }
+    TransientProps<AllowedFrameProps> & {
+        $intent: BadgeIntent;
+        $isAnimated: boolean;
+        $isClickable: boolean;
+    }
 >`
     --badge-color: ${({ theme, $intent }) => theme[mapIntentToBackgroundColor($intent)]};
     display: inline-flex;
     border-radius: calc(infinity * 1px);
     background: var(--badge-color);
+
+    ${({ theme, $intent, $isClickable }) =>
+        $isClickable &&
+        css`
+            padding: 0;
+            border: none;
+            cursor: pointer;
+            transition: background 0.1s ease-in-out;
+
+            &:hover {
+                background: ${theme[mapIntentToHoveredBackgroundColor($intent)]};
+            }
+
+            &:active {
+                background: ${theme[mapIntentToPressedBackgroundColor($intent)]};
+            }
+
+            &:focus-visible {
+                ${commonFocusStyles}
+            }
+        `}
 
     ${({ $isAnimated }) =>
         $isAnimated &&
@@ -95,6 +123,7 @@ export type BadgeProps = AllowedFrameProps & {
     priority?: TextPriority;
     iconLeft?: IconComponent;
     iconRight?: IconComponent;
+    onClick?: () => void;
     children?: React.ReactNode;
     'data-testid'?: string;
 };
@@ -106,6 +135,7 @@ export const Badge = ({
     priority = intent === 'neutral' ? 'secondary' : 'primary',
     iconLeft,
     iconRight,
+    onClick,
     children,
     'data-testid': dataTest,
     ...rest
@@ -119,10 +149,14 @@ export const Badge = ({
 
     return (
         <Container
+            as={onClick ? 'button' : 'div'}
+            type={onClick ? 'button' : undefined}
+            onClick={onClick}
             data-component="Badge"
             data-testid={dataTest}
             $intent={intent}
             $isAnimated={isAnimated}
+            $isClickable={!!onClick}
             {...frameProps}
         >
             <Row gap={4} padding={mapSizeToPadding(size)}>

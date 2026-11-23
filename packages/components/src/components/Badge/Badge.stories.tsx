@@ -36,6 +36,11 @@ export const Badge: StoryObj<typeof meta> = {
                 type: 'boolean',
             },
         },
+        onClick: {
+            options: ['onClick'],
+            control: { type: 'select' },
+            mapping: { onClick: () => {} },
+        },
         ...getFramePropsStory(allowedBadgeFrameProps).argTypes,
     },
 };

@@ -16,6 +16,32 @@ export const mapIntentToBackgroundColor = (intent: BadgeIntent): Color => {
     return colorMap[intent];
 };
 
+export const mapIntentToHoveredBackgroundColor = (intent: BadgeIntent): Color => {
+    const colorMap: Record<BadgeIntent, Color> = {
+        brand: 'elementFillBrandSoftHovered',
+        neutral: 'elementFillNeutralSoftHovered',
+        info: 'elementFillInfoSoftHovered',
+        warning: 'elementFillWarningSoftHovered',
+        critical: 'elementFillCriticalSoftHovered',
+        explore: 'elementFillAccentVioletSoftHovered',
+    };
+
+    return colorMap[intent];
+};
+
+export const mapIntentToPressedBackgroundColor = (intent: BadgeIntent): Color => {
+    const colorMap: Record<BadgeIntent, Color> = {
+        brand: 'elementFillBrandSoftPressed',
+        neutral: 'elementFillNeutralSoftPressed',
+        info: 'elementFillInfoSoftPressed',
+        warning: 'elementFillWarningSoftPressed',
+        critical: 'elementFillCriticalSoftPressed',
+        explore: 'elementFillAccentVioletSoftPressed',
+    };
+
+    return colorMap[intent];
+};
+
 export const mapIntentToIconColor = (intent: BadgeIntent): Color => {
     const colorMap: Record<BadgeIntent, Color> = {
         brand: 'contentBrand',
