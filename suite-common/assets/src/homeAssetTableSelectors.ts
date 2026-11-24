@@ -6,11 +6,8 @@ import {
     selectHasBitcoinOnlyFirmware,
     selectIsPortfolioTrackerDevice,
 } from '@suite-common/device';
-import {
-    formatStakingAmount,
-    selectCountedStakingPositionEntriesByAccount,
-} from '@suite-common/earn-staking';
-import { getStakingPositionAmount, stakingAmountSchema } from '@suite-common/earn-staking-common';
+import { formatStakingAmount, selectStakingAccountAmount } from '@suite-common/earn-staking';
+import { stakingAmountSchema } from '@suite-common/earn-staking-common';
 import {
     type NetworksRootState,
     selectNetworkNamesMap,
@@ -32,7 +29,6 @@ import {
     selectVisibleDeviceAccounts,
 } from '@suite-common/wallet-core';
 import {
-    type Account,
     type AccountKey,
     type BaseCurrencyAmount,
     type CryptoBaseCurrencyPair,
@@ -58,6 +54,7 @@ import {
     selectHiddenTokenReasons,
 } from './assetAccountsSelectors';
 import { sumAssetAccounts } from './homeAssetTableUtils';
+import { getAvailableAmount, getStakingRatio } from './stakingSplitUtils';
 
 export type HomeAssetTableState = AssetAccountsRootState &
     DeviceRootState &
@@ -696,34 +693,22 @@ export const selectWalletAssetSignVerifyAccounts = createMemoizedSelector(
 
 const selectHomeAssetTableState = (state: HomeAssetTableState) => state;
 
-const getAccountStakingAmount = (state: HomeAssetTableState, account: Account) =>
-    selectCountedStakingPositionEntriesByAccount(state, account.key).reduce(
-        (total, { position }) => total.plus(getStakingPositionAmount(position)),
-        ZERO,
-    );
-
 export const selectWalletAssetStakingAmount = createMemoizedSelector(
     [
         selectHomeAssetTableState,
         selectVisibleDeviceAccounts,
         selectWalletAssetNetworkSymbol,
         selectWalletAssetContractAddress,
-        (
-            _state: HomeAssetTableState,
-            _assetKey: WalletAssetKey | undefined,
-            _isHidden?: boolean,
-            accountKey?: AccountKey,
-        ) => accountKey,
     ],
-    (state, accounts, networkSymbol, contractAddress, accountKey): string => {
+    (state, accounts, networkSymbol, contractAddress): string => {
         if (networkSymbol === undefined || contractAddress !== undefined) {
             return '0';
         }
 
         const stakingAmount = accounts.reduce(
             (total, account) =>
-                account.symbol === networkSymbol && (accountKey ?? account.key) === account.key
-                    ? total.plus(getAccountStakingAmount(state, account))
+                account.symbol === networkSymbol
+                    ? total.plus(selectStakingAccountAmount(state, account.key))
                     : total,
             ZERO,
         );
@@ -737,25 +722,12 @@ export const selectWalletAssetStakingAmount = createMemoizedSelector(
 
 export const selectWalletAssetStakingRatio = createMemoizedSelector(
     [selectWalletAssetAmount, selectWalletAssetStakingAmount],
-    (totalAmount, stakingAmount) => {
-        if (
-            totalAmount === undefined ||
-            !isPositiveBalance(totalAmount) ||
-            !isPositiveBalance(stakingAmount)
-        ) {
-            return undefined;
-        }
-
-        return Number(stakingAmount) / Number(totalAmount);
-    },
+    getStakingRatio,
 );
 
 export const selectWalletAssetAvailableAmount = createMemoizedSelector(
     [selectWalletAssetAmount, selectWalletAssetStakingAmount],
-    (totalAmount, stakingAmount) =>
-        totalAmount === undefined
-            ? undefined
-            : new BigNumber(totalAmount).minus(stakingAmount).toFixed(),
+    getAvailableAmount,
 );
 
 export const selectWalletAssetTokenSymbol = (

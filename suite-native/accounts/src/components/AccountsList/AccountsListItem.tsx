@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 
 import {
     type StakingRootState,
+    selectAccountCryptoBalanceWithStaking,
     selectHasStakingAccountWarning,
     selectIsStakingAccountActive,
 } from '@suite-common/earn-staking';
@@ -22,7 +23,6 @@ import { isNetworkWithTokens } from '@suite-native/tokens';
 
 import {
     type NativeAccountsRootState,
-    selectAccountCryptoBalanceWithStaking,
     selectAccountFiatBalance,
     selectAccountHasAnyKnownTokens,
 } from '../../selectors';

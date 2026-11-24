@@ -18,7 +18,9 @@ import { FirmwareType, type StaticSessionId } from '@trezor/device-utils';
 import { BigNumber } from '@trezor/utils';
 
 import {
-    selectAccountCoinAssetKey,
+    selectAccountAvailableAmount,
+    selectAccountStakingAmount,
+    selectAccountStakingRatio,
     selectIsAssetTableRatePending,
     selectIsAssetTableTotalIncomplete,
 } from './accountAssetSelectors';
@@ -27,11 +29,8 @@ import {
     selectHomeAssetTotals,
     selectShownWalletAssetKeys,
     selectWalletAssetAmount,
-    selectWalletAssetAvailableAmount,
     selectWalletAssetFiatValue,
     selectWalletAssetNetworkSymbol,
-    selectWalletAssetStakingAmount,
-    selectWalletAssetStakingRatio,
     selectWalletAssetTokenSymbol,
 } from './homeAssetTableSelectors';
 
@@ -197,15 +196,11 @@ describe('the assets of an account', () => {
 });
 
 describe('the staked share of the coin of an account', () => {
-    const splitOf = (state: HomeAssetTableState, account: Account) => {
-        const coinKey = selectAccountCoinAssetKey(state, account.key);
-
-        return {
-            availableAmount: selectWalletAssetAvailableAmount(state, coinKey, false, account.key),
-            stakingAmount: selectWalletAssetStakingAmount(state, coinKey, false, account.key),
-            stakingRatio: selectWalletAssetStakingRatio(state, coinKey, false, account.key),
-        };
-    };
+    const splitOf = (state: HomeAssetTableState, account: Account) => ({
+        availableAmount: selectAccountAvailableAmount(state, account.key),
+        stakingAmount: selectAccountStakingAmount(state, account.key),
+        stakingRatio: selectAccountStakingRatio(state, account.key),
+    });
 
     it('splits the coin into what is staked and what is not', () => {
         const account = mockAccount();

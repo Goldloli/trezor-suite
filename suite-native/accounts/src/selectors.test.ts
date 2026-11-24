@@ -24,7 +24,6 @@ import { getFiatRateKey } from '@suite-common/wallet-utils';
 import {
     type NativeAccountsRootState,
     getAccountListSections,
-    selectAccountCryptoBalanceWithStaking,
     selectAccountFiatBalance,
     selectAccountListSectionsWithZeroBalanceGroup,
     selectAccountVisibleTokensCount,
@@ -455,71 +454,6 @@ describe('selectAccountListSectionsWithZeroBalanceGroup', () => {
         );
     });
 });
-
-describe('selectAccountCryptoBalanceWithStaking', () => {
-    const stakingAccount = mockEthereumStakingAccount('active');
-    // The 1.2 XRP reserve sits in the formatted balance and outside the available one.
-    const rippleAccount = mockWalletAccount({
-        symbol: asNetworkSymbol('xrp'),
-        balance: '3110000',
-        availableBalance: '1910000',
-        formattedBalance: '3.11',
-    });
-    const createState = (): NativeAccountsRootState => {
-        const state = mockStakeRootState({ accounts: [stakingAccount, rippleAccount] });
-
-        return {
-            ...state,
-            wallet: {
-                ...state.wallet,
-                settings: { ...initialWalletSettingsState, localCurrency: 'usd' },
-                fiat: fiatRatesInitialState,
-            },
-            earn: {
-                staking: mockStakingState({
-                    positions: {
-                        [stakingAccount.key]: [
-                            mockStakingPosition({
-                                balances: {
-                                    staked: stakingAmountSchema.parse('2050000000000000000'),
-                                    pending: stakingAmountSchema.parse('0'),
-                                    unstaking: stakingAmountSchema.parse('0'),
-                                    withdrawable: stakingAmountSchema.parse('0'),
-                                    rewards: stakingAmountSchema.parse('0'),
-                                },
-                                unlocks: [],
-                            }),
-                        ],
-                    },
-                }),
-            },
-            suiteSyncData: { wallets: {} },
-            tokenDefinitions: {},
-        };
-    };
-
-    it('adds the amount outside the balance to the formatted balance', () => {
-        expect(selectAccountCryptoBalanceWithStaking(createState(), stakingAccount.key)).toBe(
-            '3.55',
-        );
-    });
-
-    it('keeps the reserve of a Ripple account without a position', () => {
-        expect(selectAccountCryptoBalanceWithStaking(createState(), rippleAccount.key)).toBe(
-            '3.11',
-        );
-    });
-
-    it('is zero without the account', () => {
-        const missingAccount = mockWalletAccount({
-            symbol: btcSymbol,
-            descriptor: asAccountDescriptor('missing'),
-        });
-
-        expect(selectAccountCryptoBalanceWithStaking(createState(), missingAccount.key)).toBe('0');
-    });
-});
-
 describe('selectIsAccountDiscoveryFailed', () => {
     const staticSessionId = 'mvbu1Gdy8SUjTenqerxUaZyYjmveZvt33q@ABC123:1';
 

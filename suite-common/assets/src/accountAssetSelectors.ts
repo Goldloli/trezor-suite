@@ -1,6 +1,10 @@
 import {
+    formatStakingAmount,
+    selectAccountCryptoBalanceWithStaking,
+    selectStakingAccountAmount,
+} from '@suite-common/earn-staking';
+import {
     type WalletAssetKey,
-    getWalletAssetKey,
     selectAccountByKey,
     selectBaseCurrency,
     selectCurrentFiatRates,
@@ -8,7 +12,6 @@ import {
 } from '@suite-common/wallet-core';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { getFiatRateKey, isTestnet } from '@suite-common/wallet-utils';
-import { createWeakMapSelector } from '@trezor/redux-utils';
 
 import {
     type HomeAssetTableState,
@@ -17,20 +20,33 @@ import {
     selectWalletAssetFiatValue,
     selectWalletAssetNetworkSymbol,
 } from './homeAssetTableSelectors';
+import { getAvailableAmount, getStakingRatio } from './stakingSplitUtils';
 
-const createMemoizedSelector = createWeakMapSelector.withTypes<HomeAssetTableState>();
+/** What the account stakes of its coin, in the coin's units. */
+export const selectAccountStakingAmount = (state: HomeAssetTableState, accountKey: AccountKey) => {
+    const account = selectAccountByKey(state, accountKey);
 
-export const selectAccountCoinAssetKey = createMemoizedSelector(
-    [(state: HomeAssetTableState, accountKey: AccountKey) => selectAccountByKey(state, accountKey)],
-    account =>
-        account === null
-            ? undefined
-            : getWalletAssetKey({
-                  deviceState: account.deviceState,
-                  networkSymbol: account.symbol,
-                  contractAddress: undefined,
-              }),
-);
+    return account === null
+        ? '0'
+        : formatStakingAmount({
+              amount: selectStakingAccountAmount(state, accountKey),
+              networkSymbol: account.symbol,
+          });
+};
+
+/** What the account holds of its coin without what it stakes. */
+export const selectAccountAvailableAmount = (state: HomeAssetTableState, accountKey: AccountKey) =>
+    getAvailableAmount(
+        selectAccountCryptoBalanceWithStaking(state, accountKey),
+        selectAccountStakingAmount(state, accountKey),
+    );
+
+/** The share of the account's coin that is staked. */
+export const selectAccountStakingRatio = (state: HomeAssetTableState, accountKey: AccountKey) =>
+    getStakingRatio(
+        selectAccountCryptoBalanceWithStaking(state, accountKey),
+        selectAccountStakingAmount(state, accountKey),
+    );
 
 /**
  * Whether the asset's missing rate is still on its way. A testnet is never priced, a token whose

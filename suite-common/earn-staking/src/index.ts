@@ -107,6 +107,7 @@ export {
     type StakingPromotionScope,
 } from './state/stakingAccessSelectors';
 export {
+    selectAccountCryptoBalanceWithStaking,
     selectCountedStakingPositionEntriesByAccount,
     selectHasStakingAccountWarning,
     selectIsStakingAccountActive,
