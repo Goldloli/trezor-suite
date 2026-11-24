@@ -28,9 +28,9 @@ import {
     selectAccountYieldVaultTransactions,
     selectAreAllAccountTransactionsLoaded,
     selectEvmPrivatePendingHint,
-    selectHasAccountHistory,
     selectHasUnseenNonPhishingTransactionNotifications,
     selectHistoryCoveredSince,
+    selectIsAccountTransactionListShown,
     selectNonPhishingTransactionNotifications,
     selectTransactionsWithMissingRates,
 } from './transactionsSelectors';
@@ -549,7 +549,7 @@ describe(selectAreAllAccountTransactionsLoaded.name, () => {
     });
 });
 
-describe('selectHasAccountHistory', () => {
+describe('selectIsAccountTransactionListShown', () => {
     type HistoryStateParams = {
         transactions?: WalletAccountTransaction[];
         isLoading?: boolean;
@@ -557,8 +557,12 @@ describe('selectHasAccountHistory', () => {
         account?: Record<string, unknown>;
     };
 
-    const hasHistory = ({ transactions = [], isLoading = false, account }: HistoryStateParams) =>
-        selectHasAccountHistory(
+    const isTransactionListShown = ({
+        transactions = [],
+        isLoading = false,
+        account,
+    }: HistoryStateParams) =>
+        selectIsAccountTransactionListShown(
             {
                 wallet: {
                     transactions: {
@@ -584,32 +588,36 @@ describe('selectHasAccountHistory', () => {
         );
 
     it('has a history once a transaction is stored', () => {
-        expect(hasHistory({ transactions: [testMocks.getWalletTransaction()] })).toBe(true);
-    });
-
-    it('has a history while the transactions load', () => {
-        expect(hasHistory({ isLoading: true })).toBe(true);
-    });
-
-    it('has none for an account without transactions', () => {
-        expect(hasHistory({})).toBe(false);
-    });
-
-    it('has a history a direct-RPC backend has not scanned yet', () => {
-        expect(hasHistory({ account: { backendType: 'evm-rpc', history: { total: -1 } } })).toBe(
+        expect(isTransactionListShown({ transactions: [testMocks.getWalletTransaction()] })).toBe(
             true,
         );
     });
 
+    it('has a history while the transactions load', () => {
+        expect(isTransactionListShown({ isLoading: true })).toBe(true);
+    });
+
+    it('has none for an account without transactions', () => {
+        expect(isTransactionListShown({})).toBe(false);
+    });
+
+    it('has a history a direct-RPC backend has not scanned yet', () => {
+        expect(
+            isTransactionListShown({ account: { backendType: 'evm-rpc', history: { total: -1 } } }),
+        ).toBe(true);
+    });
+
     it('has a history a direct-RPC backend can load further back', () => {
         expect(
-            hasHistory({ account: { backendType: 'evm-rpc', misc: { olderHistoryFrom: 1 } } }),
+            isTransactionListShown({
+                account: { backendType: 'evm-rpc', misc: { olderHistoryFrom: 1 } },
+            }),
         ).toBe(true);
     });
 
     it('has none for an empty account, even on a direct-RPC backend', () => {
         expect(
-            hasHistory({
+            isTransactionListShown({
                 account: { backendType: 'evm-rpc', empty: true, history: { total: -1 } },
             }),
         ).toBe(false);
@@ -617,7 +625,7 @@ describe('selectHasAccountHistory', () => {
 
     it('has none for an account it does not know', () => {
         expect(
-            selectHasAccountHistory(
+            selectIsAccountTransactionListShown(
                 {
                     wallet: { transactions: transactionsInitialState, accounts: [] },
                 } as unknown as TransactionsRootState & AccountsRootState,

@@ -398,11 +398,12 @@ export const selectHistoryCoveredSince = createMemoizedSelector(
 );
 
 /**
- * Whether the account's overview has a history to list. A direct-RPC backend has only scanned a
+ * Whether the account's overview shows its transaction list: there are transactions, or they are
+ * loading, or there is history still to scan. A direct-RPC backend has only scanned a
  * recent window, or nothing yet, so an empty list is not proof that history is unavailable: the
  * list shows the progress and the way further back.
  */
-export const selectHasAccountHistory = (
+export const selectIsAccountTransactionListShown = (
     state: TransactionsRootState & AccountsRootState,
     accountKey: AccountKey | null,
 ) => {

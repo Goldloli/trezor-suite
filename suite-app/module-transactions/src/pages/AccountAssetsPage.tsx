@@ -1,5 +1,5 @@
 import { selectFullSelectedAccount } from '@suite/account';
-import { selectHasAccountHistory } from '@suite-common/wallet-core';
+import { selectIsAccountTransactionListShown } from '@suite-common/wallet-core';
 import {
     AccountAssetOverview,
     AccountEmpty,
@@ -17,8 +17,8 @@ import { TransactionsPage } from './TransactionsPage';
 /** The account's overview with the asset-first Home: its assets as Home lists the wallet's, then its history. */
 export const AccountAssetsPage = () => {
     const selectedAccount = useSelector(selectFullSelectedAccount);
-    const hasHistory = useSelector(state =>
-        selectHasAccountHistory(state, selectedAccount.account?.key || null),
+    const isTransactionListShown = useSelector(state =>
+        selectIsAccountTransactionListShown(state, selectedAccount.account?.key || null),
     );
 
     if (selectedAccount.status !== 'loaded') {
@@ -34,20 +34,20 @@ export const AccountAssetsPage = () => {
 
     return (
         <WalletLayout title="TR_NAV_TRANSACTIONS" account={selectedAccount}>
-            {hasHistory && (
+            {isTransactionListShown && (
                 <>
                     <CardanoNewProviderCard account={account} />
                     <TronResources account={account} />
                 </>
             )}
             <AccountAssetOverview accountKey={account.key} />
-            {hasHistory && (
+            {isTransactionListShown && (
                 <>
                     <SolanaLimitedHistoryBanner account={account} />
                     <SingleAccountTransactionList account={account} symbol={account.symbol} />
                 </>
             )}
-            {!hasHistory &&
+            {!isTransactionListShown &&
                 (account.empty ? (
                     <AccountEmpty account={account} />
                 ) : (

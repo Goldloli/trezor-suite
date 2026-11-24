@@ -3,7 +3,7 @@ import { type ReactNode } from 'react';
 import { type SelectedAccountState, selectFullSelectedAccount } from '@suite/account';
 import {
     selectAccountTransactionsWithNulls,
-    selectHasAccountHistory,
+    selectIsAccountTransactionListShown,
 } from '@suite-common/wallet-core';
 import { Column } from '@trezor/components';
 import {
@@ -39,7 +39,9 @@ export const TransactionsPage = () => {
     const accountTransactions = useSelector(state =>
         selectAccountTransactionsWithNulls(state, accountKey),
     );
-    const hasHistory = useSelector(state => selectHasAccountHistory(state, accountKey));
+    const isTransactionListShown = useSelector(state =>
+        selectIsAccountTransactionListShown(state, accountKey),
+    );
 
     if (selectedAccount.status !== 'loaded') {
         return <Layout selectedAccount={selectedAccount} />;
@@ -77,7 +79,7 @@ export const TransactionsPage = () => {
         );
     }
 
-    if (hasHistory) {
+    if (isTransactionListShown) {
         return (
             <Layout selectedAccount={selectedAccount}>
                 <CardanoNewProviderCard account={account} />
