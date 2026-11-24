@@ -7,6 +7,7 @@ import {
     selectHasStakingAccountWarning,
     selectIsStakingAccountActive,
 } from '@suite-common/earn-staking';
+import { isNetworkWithTokens } from '@suite-common/wallet-config';
 import { type AccountsRootState, selectFormattedAccountType } from '@suite-common/wallet-core';
 import { type Account } from '@suite-common/wallet-types';
 import { isAccountFailed } from '@suite-common/wallet-utils';
@@ -19,7 +20,6 @@ import {
     NetworkDisplaySymbolNameFormatter,
 } from '@suite-native/formatters';
 import { Icon, TokenIcon } from '@suite-native/icons';
-import { isNetworkWithTokens } from '@suite-native/tokens';
 
 import {
     type NativeAccountsRootState,
