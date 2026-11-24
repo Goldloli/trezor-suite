@@ -841,12 +841,7 @@ export const selectWalletAssetHiddenReason = (
 
 export const selectWalletAssetFiatValue = createMemoizedSelector(
     [
-        (
-            state: HomeAssetTableState,
-            _assetKey: WalletAssetKey | undefined,
-            _isHidden?: boolean,
-            accountKey?: AccountKey,
-        ) => selectWalletAssetValues(state, accountKey),
+        (state: HomeAssetTableState) => selectWalletAssetValues(state),
         (state: HomeAssetTableState) => selectHiddenWalletAssetValues(state),
         (_state: HomeAssetTableState, assetKey: WalletAssetKey | undefined) => assetKey,
         (_state: HomeAssetTableState, _assetKey: WalletAssetKey | undefined, isHidden = false) =>

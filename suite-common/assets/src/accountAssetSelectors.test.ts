@@ -28,9 +28,9 @@ import {
 import {
     type HomeAssetTableState,
     selectHomeAssetTotals,
+    selectShownWalletAssetFiatValuations,
     selectShownWalletAssetKeys,
     selectWalletAssetAmount,
-    selectWalletAssetFiatValue,
     selectWalletAssetNetworkSymbol,
     selectWalletAssetTokenSymbol,
 } from './homeAssetTableSelectors';
@@ -142,13 +142,16 @@ const createState = (
         },
     }) as unknown as HomeAssetTableState;
 
-const rowsOf = (state: HomeAssetTableState, account: Account) =>
-    selectShownWalletAssetKeys(state, account.key).map((assetKey: WalletAssetKey) => [
+const rowsOf = (state: HomeAssetTableState, account: Account) => {
+    const valuations = selectShownWalletAssetFiatValuations(state, account.key);
+
+    return selectShownWalletAssetKeys(state, account.key).map((assetKey: WalletAssetKey, index) => [
         selectWalletAssetTokenSymbol(state, assetKey, false, account.key) ??
             selectWalletAssetNetworkSymbol(state, assetKey, false, account.key)?.toUpperCase(),
         selectWalletAssetAmount(state, assetKey, false, account.key),
-        selectWalletAssetFiatValue(state, assetKey, false, account.key)?.toFixed(),
+        valuations[index]?.fiatAmount?.toFixed(),
     ]);
+};
 
 const totalOf = (state: HomeAssetTableState, account: Account) =>
     selectHomeAssetTotals(state, account.key).fiatValue;
