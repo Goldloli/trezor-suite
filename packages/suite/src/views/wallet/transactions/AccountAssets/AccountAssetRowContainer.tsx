@@ -1,5 +1,6 @@
 import { memo } from 'react';
 
+import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { gotoThunk } from '@suite/router';
 import {
     selectWalletAssetAmount,
@@ -26,7 +27,7 @@ export const AccountAssetRowContainer = memo(function AccountAssetRowContainer({
     accountKey,
     assetKey,
 }: AccountAssetRowContainerProps) {
-    const { dispatch } = useServices(injectDispatch);
+    const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
     const networkSymbol = useSelector(state =>
         selectWalletAssetNetworkSymbol(state, assetKey, false, accountKey),
     );
@@ -54,14 +55,23 @@ export const AccountAssetRowContainer = memo(function AccountAssetRowContainer({
             tokenSymbol={tokenSymbol}
             tokenDecimals={tokenDecimals}
             amount={amount}
-            onOpen={() =>
+            onOpen={() => {
+                analytics.report({
+                    type: events.navigateFlowEvent.name,
+                    payload: {
+                        action: 'navigate',
+                        type: 'asset',
+                        from: 'account-overview',
+                        networkSymbol,
+                    },
+                });
                 dispatch(
                     gotoThunk({
                         routeName: 'suite-asset',
                         params: { symbol: networkSymbol, contractAddress },
                     }),
-                )
-            }
+                );
+            }}
             data-testid={`@wallet/account-asset/${networkSymbol}/${contractAddress ?? 'coin'}`}
         />
     );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { Translation } from '@suite/intl';
 import { gotoThunk } from '@suite/router';
 import {
@@ -38,7 +39,7 @@ type AccountAssetTableProps = {
  * account's network.
  */
 export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
-    const { dispatch } = useServices(injectDispatch);
+    const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
     const [isExpanded, setIsExpanded] = useState(false);
     const hasAssets = useSelector(state => selectHasShownWalletAssets(state, accountKey));
     const smallBalances = useSelector(state => selectSmallBalanceSummary(state, accountKey));
@@ -59,6 +60,14 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
         dispatch(setAreHomeAssetSmallBalancesShown(areShown));
     };
 
+    const openHiddenTokens = () => {
+        analytics.report({
+            type: events.navigateFlowEvent.name,
+            payload: { action: 'navigate', type: 'hidden-tokens', from: 'account-overview' },
+        });
+        dispatch(gotoThunk({ routeName: 'suite-hidden-tokens' }));
+    };
+
     if (!hasAssets) {
         return null;
     }
@@ -73,9 +82,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                                 areSmallBalancesShown={areSmallBalancesShown}
                                 smallBalances={smallBalances}
                                 onSmallBalancesChange={changeSmallBalances}
-                                onOpenHiddenTokens={() =>
-                                    dispatch(gotoThunk({ routeName: 'suite-hidden-tokens' }))
-                                }
+                                onOpenHiddenTokens={openHiddenTokens}
                             />
                         </Table.Cell>
                         <Table.Cell align="end">

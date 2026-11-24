@@ -1,3 +1,4 @@
+import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { gotoThunk } from '@suite/router';
 import {
     selectAccountAvailableAmount,
@@ -21,7 +22,7 @@ type AccountAssetEarnProps = {
 
 /** The account's coin split as the asset detail splits the wallet's; View all opens Staking. */
 export const AccountAssetEarn = ({ accountKey }: AccountAssetEarnProps) => {
-    const { dispatch } = useServices(injectDispatch);
+    const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
     const networkSymbol = useSelector(state => selectAccountByKey(state, accountKey)?.symbol);
     const amount = useSelector(state => selectAccountCryptoBalanceWithStaking(state, accountKey));
     const availableAmount = useSelector(state => selectAccountAvailableAmount(state, accountKey));
@@ -45,9 +46,18 @@ export const AccountAssetEarn = ({ accountKey }: AccountAssetEarnProps) => {
             stakingAmount={stakingAmount}
             stakingRatio={stakingRatio}
             apy={apy}
-            onViewAll={() =>
-                dispatch(gotoThunk({ routeName: 'wallet-staking', preserveParams: true }))
-            }
+            onViewAll={() => {
+                analytics.report({
+                    type: events.navigateFlowEvent.name,
+                    payload: {
+                        action: 'navigate',
+                        type: 'earn',
+                        from: 'account-overview',
+                        networkSymbol,
+                    },
+                });
+                dispatch(gotoThunk({ routeName: 'wallet-staking', preserveParams: true }));
+            }}
             data-testid="@wallet/account-assets/earn"
         />
     );

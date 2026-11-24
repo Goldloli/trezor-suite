@@ -1,9 +1,13 @@
 import '@suite-common/test-utils/globalOverrides';
 
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 
 import { initialState as selectedAccountInitialState } from '@suite/account';
+import { type DesktopAnalyticsDep, events } from '@suite/analytics';
+import { mockDesktopAnalytics } from '@suite/analytics/mocks';
 import { messages } from '@suite/intl';
+import { type SuiteRouterHistoryDep } from '@suite/router';
+import { mockSuiteRouterHistory } from '@suite/router/mocks';
 import { useAccountAssetMissingRateTickersQuery } from '@suite-common/assets';
 import { mockStakingState } from '@suite-common/earn-staking/mocks';
 import { stakingAmountSchema } from '@suite-common/earn-staking-common';
@@ -155,8 +159,13 @@ const renderOverview = (
 ) => {
     jest.mocked(useAccountAssetMissingRateTickersQuery).mockReturnValue({ isFiatRatesLoading });
 
-    const { services } = createTestCompositionRoot<void, MockSuiteState>({
+    const analytics = mockDesktopAnalytics();
+    const { services } = createTestCompositionRoot<
+        { services: DesktopAnalyticsDep & SuiteRouterHistoryDep },
+        MockSuiteState
+    >({
         preloadedState: getState(accounts, { rates, ...options }),
+        services: () => ({ analytics, suiteRouterHistory: mockSuiteRouterHistory() }),
     });
 
     renderWithProviders(
@@ -165,6 +174,8 @@ const renderOverview = (
             <AccountAssetOverview accountKey={ethAccount.key} />
         </AccountHeaderProvider>,
     );
+
+    return { analytics };
 };
 
 const rowTestIds = () =>
@@ -276,5 +287,53 @@ describe('the account overview with the asset-first Home', () => {
         expect(
             screen.queryByTestId('@wallet/account-assets/fiat-amount/approximate'),
         ).not.toBeInTheDocument();
+    });
+
+    describe('what navigating away from it reports', () => {
+        const navigateEvent = (payload: { type: string; networkSymbol?: string }) => ({
+            type: events.navigateFlowEvent.name,
+            payload: { action: 'navigate', from: 'account-overview', ...payload },
+        });
+
+        it('reports opening an asset', () => {
+            const { analytics } = renderOverview([ethAccount]);
+
+            fireEvent.click(screen.getByTestId('@wallet/account-asset/eth/coin'));
+
+            expect(analytics.report).toHaveBeenCalledTimes(1);
+            expect(analytics.report).toHaveBeenCalledWith(
+                navigateEvent({ type: 'asset', networkSymbol: 'eth' }),
+            );
+        });
+
+        it('reports View all of the Earn card', () => {
+            const { analytics } = renderOverview([ethAccount]);
+
+            fireEvent.click(screen.getByTestId('@wallet/account-assets/earn/view-all'));
+
+            expect(analytics.report).toHaveBeenCalledTimes(1);
+            expect(analytics.report).toHaveBeenCalledWith(
+                navigateEvent({ type: 'earn', networkSymbol: 'eth' }),
+            );
+        });
+
+        it('reports opening the hidden tokens', () => {
+            const { analytics } = renderOverview([ethAccount]);
+
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/hidden-tokens'));
+
+            expect(analytics.report).toHaveBeenCalledTimes(1);
+            expect(analytics.report).toHaveBeenCalledWith(navigateEvent({ type: 'hidden-tokens' }));
+        });
+
+        it("reports nothing for the small-balance switch, which is Home's event", () => {
+            const { analytics } = renderOverview([ethAccount]);
+
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/small-balances-toggle'));
+
+            expect(analytics.report).not.toHaveBeenCalled();
+        });
     });
 });
