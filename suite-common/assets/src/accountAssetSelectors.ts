@@ -5,8 +5,9 @@ import {
 } from '@suite-common/earn-staking';
 import {
     createStableTickerIds,
+    getIsFiatTotalIncomplete,
+    getIsFiatTotalUnavailable,
     getMissingRateTickerIds,
-    hasAnyFiatRate,
     selectAccountByKey,
     selectIsTokenFiatRateDisallowed,
 } from '@suite-common/wallet-core';
@@ -69,9 +70,9 @@ export const selectIsAccountAssetFiatTotalIncomplete = (
     accountKey: AccountKey,
     isFiatRatesLoading: boolean,
 ) =>
-    !isFiatRatesLoading &&
-    selectAccountAssetFiatValuations(state, accountKey).some(
-        ({ fiatAmount }) => fiatAmount === null,
+    getIsFiatTotalIncomplete(
+        selectAccountAssetFiatValuations(state, accountKey),
+        isFiatRatesLoading,
     );
 
 /** Whether nothing the account holds can be priced, so there is no total to show. */
@@ -80,5 +81,7 @@ export const selectIsAccountAssetFiatTotalUnavailable = (
     accountKey: AccountKey,
     isFiatRatesLoading: boolean,
 ) =>
-    selectIsAccountAssetFiatTotalIncomplete(state, accountKey, isFiatRatesLoading) &&
-    !hasAnyFiatRate(selectAccountAssetFiatValuations(state, accountKey));
+    getIsFiatTotalUnavailable(
+        selectAccountAssetFiatValuations(state, accountKey),
+        isFiatRatesLoading,
+    );

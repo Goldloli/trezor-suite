@@ -8,8 +8,9 @@ import {
     type FiatValuation,
     type YieldOpportunity,
     createStableTickerIds,
+    getIsFiatTotalIncomplete,
+    getIsFiatTotalUnavailable,
     getMissingRateTickerIds,
-    hasAnyFiatRate,
     selectYieldFiatValuations,
     selectYieldPositionsCount,
     sumFiatValuations,
@@ -43,15 +44,13 @@ export const selectEarnMissingTickerIds = createMemoizedSelector(
 );
 
 export const selectIsEarnFiatTotalIncomplete = createMemoizedSelector(
-    [selectEarnMissingTickerIds, selectIsFiatRatesLoadingParam],
-    (missingTickerIds, isFiatRatesLoading): boolean =>
-        missingTickerIds.length > 0 && !isFiatRatesLoading,
+    [selectEarnFiatValuations, selectIsFiatRatesLoadingParam],
+    getIsFiatTotalIncomplete,
 );
 
 export const selectIsEarnFiatTotalUnavailable = createMemoizedSelector(
-    [selectIsEarnFiatTotalIncomplete, selectEarnFiatValuations],
-    (isFiatTotalIncomplete, valuations): boolean =>
-        isFiatTotalIncomplete && !hasAnyFiatRate(valuations),
+    [selectEarnFiatValuations, selectIsFiatRatesLoadingParam],
+    getIsFiatTotalUnavailable,
 );
 
 export const selectIsEarnBalanceBreakdownDisplayed = createMemoizedSelector(

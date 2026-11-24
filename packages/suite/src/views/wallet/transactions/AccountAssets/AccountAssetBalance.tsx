@@ -1,4 +1,5 @@
 import { Translation } from '@suite/intl';
+import { selectShouldAnimateLoadingSkeleton } from '@suite/ui-animations';
 import {
     selectHomeAssetTotals,
     selectIsAccountAssetFiatTotalIncomplete,
@@ -33,6 +34,7 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
     const isUnavailable = useSelector(state =>
         selectIsAccountAssetFiatTotalUnavailable(state, accountKey, isFiatRatesLoading),
     );
+    const shouldAnimateSkeleton = useSelector(selectShouldAnimateLoadingSkeleton);
     const { balanceSectionRef } = useAccountHeaderContext();
 
     return (
@@ -46,6 +48,7 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
                 }
                 // A total already priced in part stays while the rest is fetched.
                 isLoading={fiatValue === undefined && isFiatRatesLoading}
+                isSkeletonAnimated={shouldAnimateSkeleton}
                 isStretched
                 data-testid="@wallet/account-assets/balance"
             >

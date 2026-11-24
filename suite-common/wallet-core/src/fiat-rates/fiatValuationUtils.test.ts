@@ -5,6 +5,8 @@ import { BigNumber } from '@trezor/utils';
 
 import {
     type FiatValuation,
+    getIsFiatTotalIncomplete,
+    getIsFiatTotalUnavailable,
     getMissingRateTickerIds,
     hasAnyFiatRate,
     sumFiatValuations,
@@ -68,5 +70,29 @@ describe(hasAnyFiatRate.name, () => {
     it('is false when no position has a fiat amount', () => {
         expect(hasAnyFiatRate([createValuation(adaTickerId, null)])).toBe(false);
         expect(hasAnyFiatRate([])).toBe(false);
+    });
+});
+
+describe('a fiat total that lacks a rate', () => {
+    const priced = createValuation(adaTickerId, '2.5');
+    const unpriced = createValuation(usdcTickerId, null);
+
+    it('is complete when everything is priced', () => {
+        expect(getIsFiatTotalIncomplete([priced], false)).toBe(false);
+        expect(getIsFiatTotalUnavailable([priced], false)).toBe(false);
+    });
+
+    it('is incomplete, and still a total, when only a part is priced', () => {
+        expect(getIsFiatTotalIncomplete([priced, unpriced], false)).toBe(true);
+        expect(getIsFiatTotalUnavailable([priced, unpriced], false)).toBe(false);
+    });
+
+    it('is unavailable when nothing is priced', () => {
+        expect(getIsFiatTotalUnavailable([unpriced], false)).toBe(true);
+    });
+
+    it('is neither while the missing rates are on their way', () => {
+        expect(getIsFiatTotalIncomplete([priced, unpriced], true)).toBe(false);
+        expect(getIsFiatTotalUnavailable([unpriced], true)).toBe(false);
     });
 });

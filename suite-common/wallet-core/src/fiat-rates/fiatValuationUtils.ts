@@ -31,3 +31,16 @@ export const getMissingRateTickerIds = (valuations: readonly FiatValuation[]): T
 
 export const hasAnyFiatRate = (valuations: readonly FiatValuation[]): boolean =>
     valuations.some(({ fiatAmount }) => fiatAmount !== null);
+
+/** Whether the total leaves out something that has no rate, once no rate is on its way. */
+export const getIsFiatTotalIncomplete = (
+    valuations: readonly FiatValuation[],
+    isFiatRatesLoading: boolean,
+): boolean => !isFiatRatesLoading && valuations.some(({ fiatAmount }) => fiatAmount === null);
+
+/** Whether nothing can be priced, so there is no total to show. */
+export const getIsFiatTotalUnavailable = (
+    valuations: readonly FiatValuation[],
+    isFiatRatesLoading: boolean,
+): boolean =>
+    getIsFiatTotalIncomplete(valuations, isFiatRatesLoading) && !hasAnyFiatRate(valuations);
