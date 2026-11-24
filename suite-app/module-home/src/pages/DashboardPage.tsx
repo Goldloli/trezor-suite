@@ -48,7 +48,7 @@ export const DashboardPage = () => {
 
     return (
         <AssetFirstHomeExperiment
-            asItWas={<DashboardAsItWas />}
+            original={<DashboardAsItWas />}
             assetFirst={
                 <Column gap={24} data-testid="@dashboard/index">
                     <DashboardNotices />

@@ -4,20 +4,20 @@ import { ExperimentId, ExperimentWrapper } from '@suite-common/message-system';
 
 type AssetFirstHomeExperimentProps = {
     /** The page as it was: what a user outside the experiment, or in variant A, gets. */
-    asItWas: ReactElement;
+    original: ReactElement;
     /** The page as the asset-first Home has it: variant B. */
     assetFirst: ReactElement;
 };
 
 /** Switches a page on the asset-first Home experiment, so a page only names its two faces. */
 export const AssetFirstHomeExperiment = ({
-    asItWas,
+    original,
     assetFirst,
 }: AssetFirstHomeExperimentProps) => (
     <ExperimentWrapper
         id={ExperimentId.assetFirstHomeTable}
         components={[
-            { variant: 'A', element: asItWas },
+            { variant: 'A', element: original },
             { variant: 'B', element: assetFirst },
         ]}
     />

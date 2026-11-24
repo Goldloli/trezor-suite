@@ -24,6 +24,7 @@ import { type Account, type RatesByKey } from '@suite-common/wallet-types';
 import {
     getFiatRateKey,
     isErc4626,
+    isPositiveBalance,
     sortTokensByName,
     toFiatCurrency,
 } from '@suite-common/wallet-utils';
@@ -194,3 +195,45 @@ export const selectAccountListSectionsWithZeroBalanceGroup =
 
 /** The same sections with the vault tokens among the tokens, as the desktop account overview lists them. */
 export const selectAccountListSectionsWithVaultTokens = createAccountListSectionsSelector(true);
+
+export type AccountAssetOverview = {
+    /** The coin, the stake and the tokens the account holds something of, in the list's order. */
+    heldSections: readonly AccountListSection[];
+    /** The known tokens it holds none of, each as a token section. */
+    zeroBalanceSections: readonly AccountListSection[];
+    /** The coin once, whether it is held, staked or both, and each token held. */
+    assetCount: number;
+};
+
+const isCoinSectionHeld = (section: AccountListSection) =>
+    (section.type === 'account' && isPositiveBalance(section.account.formattedBalance)) ||
+    (section.type === 'staking' && isPositiveBalance(section.stakingCryptoBalance));
+
+/**
+ * What the desktop account overview shows of the list: one place that says what counts as held,
+ * so the table, the balance card and the count cannot disagree.
+ */
+export const selectAccountAssetOverview = createMemoizedSelector(
+    [selectAccountListSectionsWithVaultTokens],
+    (sections): AccountAssetOverview => {
+        const heldSections = sections.filter(
+            section => isCoinSectionHeld(section) || section.type === 'token',
+        );
+
+        return {
+            heldSections,
+            zeroBalanceSections: sections.flatMap((section): AccountListSection[] =>
+                section.type === 'zeroBalance'
+                    ? section.tokens.map(token => ({
+                          type: 'token',
+                          account: section.account,
+                          token,
+                      }))
+                    : [],
+            ),
+            assetCount:
+                heldSections.filter(section => section.type === 'token').length +
+                (heldSections.some(isCoinSectionHeld) ? 1 : 0),
+        };
+    },
+);

@@ -1,7 +1,3 @@
-import { memo } from 'react';
-
-import { events, injectDesktopAnalytics } from '@suite/analytics';
-import { gotoThunk } from '@suite/router';
 import {
     selectWalletAssetAmount,
     selectWalletAssetContractAddress,
@@ -10,9 +6,8 @@ import {
     selectWalletAssetTokenSymbol,
 } from '@suite-common/assets';
 import { type WalletAssetKey } from '@suite-common/wallet-core';
-import { useServices } from '@trezor/dependency-injection';
-import { injectDispatch } from '@trezor/redux-utils';
 
+import { useOpenAsset } from '#src/components/wallet/assets/useOpenAsset';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { AssetTableRowView } from './AssetTableRowView';
@@ -23,12 +18,12 @@ type HomeAssetRowContainerProps = {
     assetNameTestId?: string;
 };
 
-export const HomeAssetRowContainer = memo(function HomeAssetRowContainer({
+export const HomeAssetRowContainer = ({
     assetKey,
     hasBorderTop,
     assetNameTestId,
-}: HomeAssetRowContainerProps) {
-    const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
+}: HomeAssetRowContainerProps) => {
+    const openAsset = useOpenAsset('home-asset-table');
     const networkSymbol = useSelector(state => selectWalletAssetNetworkSymbol(state, assetKey));
     const contractAddress = useSelector(state => selectWalletAssetContractAddress(state, assetKey));
     const tokenSymbol = useSelector(state => selectWalletAssetTokenSymbol(state, assetKey));
@@ -39,24 +34,6 @@ export const HomeAssetRowContainer = memo(function HomeAssetRowContainer({
         return null;
     }
 
-    const openAssetDetail = () => {
-        analytics.report({
-            type: events.navigateFlowEvent.name,
-            payload: {
-                action: 'navigate',
-                type: 'asset',
-                from: 'home-asset-table',
-                networkSymbol,
-            },
-        });
-        dispatch(
-            gotoThunk({
-                routeName: 'suite-asset',
-                params: { symbol: networkSymbol, contractAddress },
-            }),
-        );
-    };
-
     return (
         <AssetTableRowView
             networkSymbol={networkSymbol}
@@ -64,10 +41,10 @@ export const HomeAssetRowContainer = memo(function HomeAssetRowContainer({
             tokenSymbol={tokenSymbol}
             tokenDecimals={tokenDecimals}
             amount={amount}
-            onOpen={openAssetDetail}
+            onOpen={() => openAsset({ networkSymbol, contractAddress })}
             hasBorderTop={hasBorderTop}
             assetNameTestId={assetNameTestId}
             data-testid={`@dashboard/home-asset-item/${networkSymbol}/${contractAddress ?? 'coin'}`}
         />
     );
-});
+};

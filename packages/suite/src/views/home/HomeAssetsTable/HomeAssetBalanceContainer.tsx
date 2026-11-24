@@ -1,5 +1,3 @@
-import { memo } from 'react';
-
 import {
     selectWalletAssetAmount,
     selectWalletAssetContractAddress,
@@ -16,10 +14,10 @@ type HomeAssetBalanceContainerProps = {
     isHidden?: boolean;
 };
 
-export const HomeAssetBalanceContainer = memo(function HomeAssetBalanceContainer({
+export const HomeAssetBalanceContainer = ({
     assetKey,
     isHidden,
-}: HomeAssetBalanceContainerProps) {
+}: HomeAssetBalanceContainerProps) => {
     const networkSymbol = useSelector(state =>
         selectWalletAssetNetworkSymbol(state, assetKey, isHidden),
     );
@@ -35,4 +33,4 @@ export const HomeAssetBalanceContainer = memo(function HomeAssetBalanceContainer
     return (
         <HomeAssetAmount symbol={networkSymbol} contractAddress={contractAddress} amount={amount} />
     );
-});
+};

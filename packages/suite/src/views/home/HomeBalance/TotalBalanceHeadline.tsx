@@ -1,4 +1,4 @@
-import { type ReactNode, memo } from 'react';
+import { type ReactNode } from 'react';
 
 import { HiddenPlaceholder } from '@suite/discreet-mode';
 import { Row, Text } from '@trezor/components';
@@ -17,41 +17,39 @@ type TotalBalanceHeadlineProps = {
     'data-testid'?: string;
 };
 
-export const TotalBalanceHeadline = memo(
-    ({
-        fiatValue,
-        isApproximate = false,
-        isExact,
-        fallback = null,
-        'data-testid': dataTestId,
-    }: TotalBalanceHeadlineProps) => {
-        // Nothing held can be priced; a total of zero would say there is nothing held.
-        if (fiatValue === undefined) {
-            return fallback === null ? null : (
-                <HiddenPlaceholder enforceIntensity={10}>
-                    <Text typographyStyle="headline-lg">{fallback}</Text>
-                </HiddenPlaceholder>
-            );
-        }
-
-        return (
+export const TotalBalanceHeadline = ({
+    fiatValue,
+    isApproximate = false,
+    isExact,
+    fallback = null,
+    'data-testid': dataTestId,
+}: TotalBalanceHeadlineProps) => {
+    // Nothing held can be priced; a total of zero would say there is nothing held.
+    if (fiatValue === undefined) {
+        return fallback === null ? null : (
             <HiddenPlaceholder enforceIntensity={10}>
-                <Row alignItems="baseline" data-testid={dataTestId}>
-                    {isApproximate && (
-                        <Text
-                            typographyStyle="headline-lg"
-                            color="contentTertiary"
-                            margin={{ right: 8 }}
-                            data-testid={
-                                dataTestId === undefined ? undefined : `${dataTestId}/approximate`
-                            }
-                        >
-                            ≈
-                        </Text>
-                    )}
-                    <FiatAmountHeadline fiatValue={fiatValue} isExact={isExact} />
-                </Row>
+                <Text typographyStyle="headline-lg">{fallback}</Text>
             </HiddenPlaceholder>
         );
-    },
-);
+    }
+
+    return (
+        <HiddenPlaceholder enforceIntensity={10}>
+            <Row alignItems="baseline" data-testid={dataTestId}>
+                {isApproximate && (
+                    <Text
+                        typographyStyle="headline-lg"
+                        color="contentTertiary"
+                        margin={{ right: 8 }}
+                        data-testid={
+                            dataTestId === undefined ? undefined : `${dataTestId}/approximate`
+                        }
+                    >
+                        ≈
+                    </Text>
+                )}
+                <FiatAmountHeadline fiatValue={fiatValue} isExact={isExact} />
+            </Row>
+        </HiddenPlaceholder>
+    );
+};

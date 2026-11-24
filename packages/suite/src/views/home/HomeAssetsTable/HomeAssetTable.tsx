@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
-import { Translation } from '@suite/intl';
 import { gotoThunk } from '@suite/router';
 import {
     HOME_ASSET_ROW_LIMIT,
@@ -20,10 +19,10 @@ import {
     setHomeAssetsTableGrouping,
 } from '@suite-common/wallet-core';
 import { type HomeAssetsTableGrouping } from '@suite-common/wallet-types';
-import { Card, Table } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
+import { AssetTableFrame } from '#src/components/wallet/assets/AssetTableFrame';
 import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
@@ -35,7 +34,6 @@ import { HomeAssetRowContainer } from './HomeAssetRowContainer';
 import { HomeAssetSmallBalancesHiddenRow } from './HomeAssetSmallBalancesHiddenRow';
 import { HomeAssetTableEmptyState } from './HomeAssetTableEmptyState';
 import { HomeAssetTableFilterHeader } from './HomeAssetTableFilter';
-import { HOME_ASSET_CELL_PADDING, HOME_ASSET_COL_WIDTHS } from './homeAssetTableLayout';
 
 const NO_NETWORKS: readonly NetworkSymbol[] = [];
 
@@ -107,61 +105,45 @@ export const HomeAssetTable = () => {
     }
 
     return (
-        <Card paddingType="none" data-testid="@dashboard/home-asset-table">
-            <HomeAssetNewBanner />
-            <Table isRowHighlightedOnHover colWidths={HOME_ASSET_COL_WIDTHS}>
-                <Table.Header>
-                    <Table.Row>
-                        <Table.Cell padding={HOME_ASSET_CELL_PADDING.first}>
-                            <HomeAssetTableFilterHeader
-                                grouping={grouping}
-                                areSmallBalancesShown={areSmallBalancesShown}
-                                smallBalances={smallBalances}
-                                onGroupingChange={changeGrouping}
-                                onSmallBalancesChange={changeSmallBalancesInMenu}
-                                onOpenHiddenTokens={openHiddenTokens}
-                            />
-                        </Table.Cell>
-                        <Table.Cell align="end">
-                            <Translation id="TR_EXCHANGE_RATE" />
-                        </Table.Cell>
-                        <Table.Cell align="end" padding={HOME_ASSET_CELL_PADDING.last}>
-                            <Translation id="TR_BALANCE" />
-                        </Table.Cell>
-                    </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                    {!hasAssets && <HomeAssetTableEmptyState />}
-                    {hasAssets && assetKeys.length === 0 && (
-                        <HomeAssetSmallBalancesHiddenRow
-                            onShowSmallBalances={() => changeSmallBalances(true)}
-                        />
-                    )}
-                    {grouping === 'networks'
-                        ? networkSymbols.map(symbol => (
-                              <HomeAssetNetworkSection
-                                  key={symbol}
-                                  symbol={symbol}
-                                  rowLimit={rowLimit}
-                              />
-                          ))
-                        : assetKeys.map(assetKey => (
-                              <HomeAssetRowContainer key={assetKey} assetKey={assetKey} />
-                          ))}
-                    {isFoldable && (
-                        <HomeAssetExpandRow
-                            isExpanded={isExpanded}
-                            onToggle={() => {
-                                analytics.report({
-                                    type: events.dashboardAssetTableEvent.name,
-                                    payload: { action: isExpanded ? 'show-less' : 'show-more' },
-                                });
-                                setIsExpanded(!isExpanded);
-                            }}
-                        />
-                    )}
-                </Table.Body>
-            </Table>
-        </Card>
+        <AssetTableFrame
+            banner={<HomeAssetNewBanner />}
+            assetHeader={
+                <HomeAssetTableFilterHeader
+                    grouping={grouping}
+                    areSmallBalancesShown={areSmallBalancesShown}
+                    smallBalances={smallBalances}
+                    onGroupingChange={changeGrouping}
+                    onSmallBalancesChange={changeSmallBalancesInMenu}
+                    onOpenHiddenTokens={openHiddenTokens}
+                />
+            }
+            data-testid="@dashboard/home-asset-table"
+        >
+            {!hasAssets && <HomeAssetTableEmptyState />}
+            {hasAssets && assetKeys.length === 0 && (
+                <HomeAssetSmallBalancesHiddenRow
+                    onShowSmallBalances={() => changeSmallBalances(true)}
+                />
+            )}
+            {grouping === 'networks'
+                ? networkSymbols.map(symbol => (
+                      <HomeAssetNetworkSection key={symbol} symbol={symbol} rowLimit={rowLimit} />
+                  ))
+                : assetKeys.map(assetKey => (
+                      <HomeAssetRowContainer key={assetKey} assetKey={assetKey} />
+                  ))}
+            {isFoldable && (
+                <HomeAssetExpandRow
+                    isExpanded={isExpanded}
+                    onToggle={() => {
+                        analytics.report({
+                            type: events.dashboardAssetTableEvent.name,
+                            payload: { action: isExpanded ? 'show-less' : 'show-more' },
+                        });
+                        setIsExpanded(!isExpanded);
+                    }}
+                />
+            )}
+        </AssetTableFrame>
     );
 };

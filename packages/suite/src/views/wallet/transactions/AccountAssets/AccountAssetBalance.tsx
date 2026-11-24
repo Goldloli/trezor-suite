@@ -1,10 +1,6 @@
 import { Translation } from '@suite/intl';
-import {
-    selectAccountFiatBalance,
-    selectAccountListSectionsWithVaultTokens,
-} from '@suite-common/assets';
+import { selectAccountAssetOverview, selectAccountFiatBalance } from '@suite-common/assets';
 import { type AccountKey } from '@suite-common/wallet-types';
-import { isPositiveBalance } from '@suite-common/wallet-utils';
 import { Box, Column } from '@trezor/components';
 
 import { useSelector } from '#src/hooks/suite/useSelector';
@@ -18,18 +14,9 @@ type AccountAssetBalanceProps = {
 
 /** What the account is worth in total, and how many assets make it up. */
 export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) => {
-    // The coin counts once, whether it is held, staked or both; each token counts on its own.
-    const assetCount = useSelector(state => {
-        const sections = selectAccountListSectionsWithVaultTokens(state, accountKey);
-        const isCoinHeld = sections.some(
-            section =>
-                (section.type === 'account' &&
-                    isPositiveBalance(section.account.formattedBalance)) ||
-                (section.type === 'staking' && isPositiveBalance(section.stakingCryptoBalance)),
-        );
-
-        return sections.filter(section => section.type === 'token').length + (isCoinHeld ? 1 : 0);
-    });
+    const assetCount = useSelector(
+        state => selectAccountAssetOverview(state, accountKey).assetCount,
+    );
     const fiatValue = useSelector(state => selectAccountFiatBalance(state, accountKey));
     const { balanceSectionRef } = useAccountHeaderContext();
 
