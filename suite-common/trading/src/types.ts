@@ -421,3 +421,9 @@ export type TradingExchangeAllowance = TradingExchangeAllowanceRead & {
     amount: string | undefined;
     errorMessage?: string;
 };
+
+export type TradingBridgeSpeed = (typeof constants.TRADING_BRIDGE_SPEEDS)[number];
+
+export type TradingBridgeSpeedFields = {
+    bridgeSpeed?: TradingBridgeSpeed;
+};
