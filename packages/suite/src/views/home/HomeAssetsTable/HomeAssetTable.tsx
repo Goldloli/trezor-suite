@@ -76,18 +76,23 @@ export const HomeAssetTable = () => {
 
     const changeSmallBalances = useCallback(
         (areShown: boolean) => {
-            analytics.report({
-                type: events.dashboardAssetListMenuEvent.name,
-                payload: { type: 'show-small-balances', value: areShown },
-            });
             // Turning them on while the table is folded would otherwise change nothing on screen.
             if (areShown) {
                 setIsExpanded(true);
             }
             dispatch(setAreHomeAssetSmallBalancesShown(areShown));
         },
-        [analytics, dispatch],
+        [dispatch],
     );
+
+    // Only the menu's switch is reported; the row that brings small balances back is not.
+    const changeSmallBalancesInMenu = (areShown: boolean) => {
+        analytics.report({
+            type: events.dashboardAssetListMenuEvent.name,
+            payload: { type: 'show-small-balances', value: areShown },
+        });
+        changeSmallBalances(areShown);
+    };
 
     const openHiddenTokens = () => {
         analytics.report({
@@ -113,7 +118,7 @@ export const HomeAssetTable = () => {
                                 areSmallBalancesShown={areSmallBalancesShown}
                                 smallBalances={smallBalances}
                                 onGroupingChange={changeGrouping}
-                                onSmallBalancesChange={changeSmallBalances}
+                                onSmallBalancesChange={changeSmallBalancesInMenu}
                                 onOpenHiddenTokens={openHiddenTokens}
                             />
                         </Table.Cell>
