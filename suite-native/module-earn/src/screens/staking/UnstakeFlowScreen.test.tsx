@@ -128,6 +128,7 @@ beforeEach(() => {
             formState: { isValid: true },
             handleSubmit: (callback: () => void) => callback,
         },
+        isFeeReady: true,
     } as unknown as NonNullable<ReturnType<typeof useUnstakeForm>>);
     jest.mocked(useStakingPendingTransaction).mockReturnValue({
         isPending: false,
