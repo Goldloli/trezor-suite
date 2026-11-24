@@ -182,17 +182,21 @@ const rowTestIds = () =>
     screen.getAllByTestId(/^@wallet\/account-asset\//).map(row => row.getAttribute('data-testid'));
 
 describe('the account overview with the asset-first Home', () => {
-    it('lists the coin, its stake counted in as Home counts it, and its tokens, the most valuable first', () => {
+    it('lists the coin, its stake on a row of its own, and its tokens, the most valuable first', () => {
         renderOverview([ethAccount, otherEthAccount]);
 
         expect(rowTestIds()).toEqual([
             '@wallet/account-asset/eth/coin',
+            '@wallet/account-asset/eth/staking',
             `@wallet/account-asset/eth/${USDC}`,
             `@wallet/account-asset/eth/${ONE_INCH}`,
         ]);
-        // 1.2 ETH + 0.5 ETH staked at $3,000.
+        // 1.2 ETH held and 0.5 ETH staked, at $3,000.
         expect(screen.getByTestId('@wallet/account-asset/eth/coin')).toHaveTextContent(
-            /\$5,100.*1\.7\d* ETH/,
+            /\$3,600.*1\.2\d* ETH/,
+        );
+        expect(screen.getByTestId('@wallet/account-asset/eth/staking')).toHaveTextContent(
+            new RegExp(`${messages.TR_STAKE_STAKED.defaultMessage}.*\\$1,500.*0\\.5\\d* ETH`),
         );
     });
 
@@ -223,18 +227,36 @@ describe('the account overview with the asset-first Home', () => {
         expect(screen.getByTestId('@wallet/account-assets/earn/view-all')).toBeInTheDocument();
     });
 
-    it('offers the small-balance switch and, while it is off, leaves the dust out of the rows but in the total', () => {
-        renderOverview([ethAccount], { areSmallBalancesShown: false });
+    it('keeps the tokens it holds none of in a group that opens, out of the rows and the count', () => {
+        const withEmptyToken = {
+            ...ethAccount,
+            tokens: [
+                mockAccountToken({ symbol: 'USDC', contract: USDC, balance: '1000', decimals: 6 }),
+                mockAccountToken({
+                    symbol: '1INCH',
+                    contract: ONE_INCH,
+                    balance: '0',
+                    decimals: 18,
+                }),
+            ],
+        };
 
-        expect(screen.getByTestId('@dashboard/home-asset/grouping')).toBeInTheDocument();
-        expect(rowTestIds()).toEqual([
-            '@wallet/account-asset/eth/coin',
-            `@wallet/account-asset/eth/${USDC}`,
-        ]);
-        expect(screen.getByTestId('@wallet/account-assets/fiat-amount')).toHaveTextContent(
-            '$6,100.61',
-        );
-        expect(screen.getByTestId('@wallet/account-assets/count')).toHaveTextContent('3 assets');
+        renderOverview([withEmptyToken]);
+
+        expect(rowTestIds()).not.toContain(`@wallet/account-asset/eth/${ONE_INCH}`);
+        expect(screen.getByTestId('@wallet/account-assets/count')).toHaveTextContent('2 assets');
+
+        fireEvent.click(screen.getByTestId('@wallet/account-assets/zero-balance'));
+
+        expect(rowTestIds()).toContain(`@wallet/account-asset/eth/${ONE_INCH}`);
+    });
+
+    it("offers no small-balance switch or grouping: those are the Home table's", () => {
+        renderOverview([ethAccount]);
+
+        expect(screen.queryByTestId('@dashboard/home-asset/grouping')).not.toBeInTheDocument();
+        // 2.1 1INCH is worth 61c and stays listed.
+        expect(rowTestIds()).toContain(`@wallet/account-asset/eth/${ONE_INCH}`);
     });
 
     it('waits for the rates with a placeholder while nothing is priced yet', () => {
@@ -320,20 +342,21 @@ describe('the account overview with the asset-first Home', () => {
         it('reports opening the hidden tokens', () => {
             const { analytics } = renderOverview([ethAccount]);
 
-            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
-            fireEvent.click(screen.getByTestId('@dashboard/home-asset/hidden-tokens'));
+            fireEvent.click(screen.getByTestId('@wallet/account-assets/hidden-tokens'));
 
             expect(analytics.report).toHaveBeenCalledTimes(1);
             expect(analytics.report).toHaveBeenCalledWith(navigateEvent({ type: 'hidden-tokens' }));
         });
 
-        it("reports nothing for the small-balance switch, which is Home's event", () => {
+        it('reports opening the stake as going to Earn', () => {
             const { analytics } = renderOverview([ethAccount]);
 
-            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
-            fireEvent.click(screen.getByTestId('@dashboard/home-asset/small-balances-toggle'));
+            fireEvent.click(screen.getByTestId('@wallet/account-asset/eth/staking'));
 
-            expect(analytics.report).not.toHaveBeenCalled();
+            expect(analytics.report).toHaveBeenCalledTimes(1);
+            expect(analytics.report).toHaveBeenCalledWith(
+                navigateEvent({ type: 'earn', networkSymbol: 'eth' }),
+            );
         });
     });
 });

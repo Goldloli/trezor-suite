@@ -10,30 +10,24 @@ import {
 } from '@suite-common/earn-staking-common/mocks';
 import { type TokenAddress } from '@suite-common/tokens';
 import { asNetworkSymbol } from '@suite-common/wallet-config';
-import { type WalletAssetKey } from '@suite-common/wallet-core';
 import { type Account, type AccountKey } from '@suite-common/wallet-types';
 import { getFiatRateKey } from '@suite-common/wallet-utils';
 import { type TokenInfo } from '@trezor/blockchain-link-types';
 import { FirmwareType, type StaticSessionId } from '@trezor/device-utils';
-import { BigNumber } from '@trezor/utils';
 
 import {
+    type AccountAssetsRootState,
+    selectAccountAssetCount,
     selectAccountAssetMissingRateTickerIds,
+    selectAccountAssetRows,
+    selectAccountAssetTotalFiatValue,
     selectAccountAvailableAmount,
     selectAccountStakingAmount,
     selectAccountStakingRatio,
+    selectAccountZeroBalanceAssetRows,
     selectIsAccountAssetFiatTotalIncomplete,
     selectIsAccountAssetFiatTotalUnavailable,
 } from './accountAssetSelectors';
-import {
-    type HomeAssetTableState,
-    selectHomeAssetTotals,
-    selectShownWalletAssetFiatValuations,
-    selectShownWalletAssetKeys,
-    selectWalletAssetAmount,
-    selectWalletAssetNetworkSymbol,
-    selectWalletAssetTokenSymbol,
-} from './homeAssetTableSelectors';
 
 const ALICE = 'aliceWallet@device:0' as StaticSessionId;
 
@@ -140,42 +134,62 @@ const createState = (
             [ADA]: { symbol: ADA, name: 'Cardano' },
             [TSEP]: { symbol: TSEP, name: 'Sepolia' },
         },
-    }) as unknown as HomeAssetTableState;
+    }) as unknown as AccountAssetsRootState;
 
-const rowsOf = (state: HomeAssetTableState, account: Account) => {
-    const valuations = selectShownWalletAssetFiatValuations(state, account.key);
-
-    return selectShownWalletAssetKeys(state, account.key).map((assetKey: WalletAssetKey, index) => [
-        selectWalletAssetTokenSymbol(state, assetKey, false, account.key) ??
-            selectWalletAssetNetworkSymbol(state, assetKey, false, account.key)?.toUpperCase(),
-        selectWalletAssetAmount(state, assetKey, false, account.key),
-        valuations[index]?.fiatAmount?.toFixed(),
+const rowsOf = (state: AccountAssetsRootState, account: Account) =>
+    selectAccountAssetRows(state, account.key).map(row => [
+        row.kind === 'token' ? row.tokenSymbol : row.kind,
+        row.amount,
     ]);
-};
 
-const totalOf = (state: HomeAssetTableState, account: Account) =>
-    selectHomeAssetTotals(state, account.key).fiatValue;
+const totalOf = (state: AccountAssetsRootState, account: Account) =>
+    selectAccountAssetTotalFiatValue(state, account.key);
 
 describe('the assets of an account', () => {
     const account = mockAccount({
-        tokens: [mockToken(USDC, 'USDC', '1000', 6), mockToken(ENS, 'ENS', '1.12', 18)],
+        tokens: [mockToken(ENS, 'ENS', '1.12', 18), mockToken(USDC, 'USDC', '1000', 6)],
     });
     const rates = { ...mockRate(3000), ...mockRate(1, USDC), ...mockRate(20, ENS) };
 
-    it('lists its coin, its stake counted in, and its tokens, as Home lists the wallet', () => {
+    it('lists its coin, its stake on a row of its own, and its tokens by value', () => {
         const state = createState([account], {
             rates,
             stakingPositions: { [account.key]: [HALF_ETH_STAKED] },
         });
 
         expect(rowsOf(state, account)).toEqual([
-            ['ETH', '1.7', '5100'],
-            ['USDC', '1000', '1000'],
-            ['ENS', '1.12', '22.4'],
+            ['coin', '1.2'],
+            ['staking', '0.5'],
+            ['USDC', '1000'],
+            ['ENS', '1.12'],
+        ]);
+        expect(selectAccountAssetCount(state, account.key)).toBe(3);
+    });
+
+    it('keys its rows so each can be told from the others', () => {
+        const state = createState([account], {
+            rates,
+            stakingPositions: { [account.key]: [HALF_ETH_STAKED] },
+        });
+
+        expect(selectAccountAssetRows(state, account.key).map(row => row.key)).toEqual([
+            'coin',
+            'staking',
+            USDC,
+            ENS,
         ]);
     });
 
-    it('leaves the other accounts of the wallet out', () => {
+    it('leaves out a hidden token and a coin it holds none of', () => {
+        const holder = mockAccount({
+            formattedBalance: '0',
+            tokens: [mockToken(USDC, 'USDC', '5', 6), mockToken(HIDDEN, 'SCAM', '9', 18)],
+        });
+
+        expect(rowsOf(createState([holder], { rates }), holder)).toEqual([['USDC', '5']]);
+    });
+
+    it('lists only what this account holds, not another account on the same network', () => {
         const other = mockAccount({
             key: `descriptor1-eth-${ALICE}` as AccountKey,
             formattedBalance: '10',
@@ -184,26 +198,58 @@ describe('the assets of an account', () => {
         const state = createState([account, other], { rates });
 
         expect(rowsOf(state, other)).toEqual([
-            ['ETH', '10', '30000'],
-            ['USDC', '7', '7'],
+            ['coin', '10'],
+            ['USDC', '7'],
         ]);
-        expect(totalOf(state, other)).toEqual(new BigNumber('30007'));
-        expect(totalOf(state, account)).toEqual(new BigNumber('4622.4'));
+        expect(totalOf(state, other)).toBe('30007');
     });
 
-    it('lists an account on a network the wallet has disabled', () => {
-        const testnet = mockAccount({
-            key: `descriptor0-tsep-${ALICE}` as AccountKey,
-            symbol: TSEP,
-            formattedBalance: '2',
+    it('keeps the tokens it knows but holds none of in a group of their own', () => {
+        const holder = mockAccount({
+            tokens: [mockToken(USDC, 'USDC', '5', 6), mockToken(ENS, 'ENS', '0', 18)],
+        });
+        const state = createState([holder], { rates });
+
+        expect(rowsOf(state, holder)).toEqual([
+            ['coin', '1.2'],
+            ['USDC', '5'],
+        ]);
+        expect(
+            selectAccountZeroBalanceAssetRows(state, holder.key).map(row => row.tokenSymbol),
+        ).toEqual(['ENS']);
+    });
+
+    it('lists a vault token among the tokens, where mobile keeps it in its DeFi tab', () => {
+        const holder = mockAccount({
+            tokens: [{ ...mockToken(USDC, 'USDC', '5', 6), protocols: ['erc4626'] }],
         });
 
-        expect(rowsOf(createState([testnet]), testnet)).toEqual([['TSEP', '2', undefined]]);
+        expect(rowsOf(createState([holder], { rates }), holder)).toEqual([
+            ['coin', '1.2'],
+            ['USDC', '5'],
+        ]);
+    });
+
+    it('holds nothing to list once the account is empty or unknown', () => {
+        const empty = mockAccount({ formattedBalance: '0' });
+        const state = createState([empty], { rates });
+
+        expect(rowsOf(state, empty)).toEqual([]);
+        expect(totalOf(state, empty)).toBe('0');
+        expect(selectAccountAssetRows(state, 'unknown' as AccountKey)).toEqual([]);
+    });
+
+    it('keeps the rows across a recreated state', () => {
+        const state = createState([account], { rates });
+
+        expect(selectAccountAssetRows(state, account.key)).toBe(
+            selectAccountAssetRows(state, account.key),
+        );
     });
 });
 
 describe('the staked share of the coin of an account', () => {
-    const splitOf = (state: HomeAssetTableState, account: Account) => ({
+    const splitOf = (state: AccountAssetsRootState, account: Account) => ({
         availableAmount: selectAccountAvailableAmount(state, account.key),
         stakingAmount: selectAccountStakingAmount(state, account.key),
         stakingRatio: selectAccountStakingRatio(state, account.key),
@@ -240,7 +286,7 @@ describe('the fiat total of an account', () => {
     });
     const SHOWN_UNKNOWN = '0x00000000000000000000000000000000000000bb' as TokenAddress;
     const flagsOf = (
-        state: HomeAssetTableState,
+        state: AccountAssetsRootState,
         ofAccount: Account,
         isFiatRatesLoading = false,
     ) => ({
@@ -262,7 +308,7 @@ describe('the fiat total of an account', () => {
             rates: { ...mockRate(3000), ...mockRate(1, USDC), ...mockRate(20, ENS) },
         });
 
-        expect(totalOf(state, account)).toEqual(new BigNumber('4622.4'));
+        expect(totalOf(state, account)).toBe('4622.4');
         expect(flagsOf(state, account)).toEqual({
             missing: [],
             isIncomplete: false,
@@ -270,12 +316,22 @@ describe('the fiat total of an account', () => {
         });
     });
 
+    it('counts the stake into the coin once, though the stake has a row of its own', () => {
+        const state = createState([account], {
+            rates: { ...mockRate(3000), ...mockRate(1, USDC), ...mockRate(20, ENS) },
+            stakingPositions: { [account.key]: [HALF_ETH_STAKED] },
+        });
+
+        // 1.2 ETH held and 0.5 ETH staked at $3,000, 1,000 USDC and 1.12 ENS at $20.
+        expect(totalOf(state, account)).toBe('6122.4');
+    });
+
     it('adds up what it can, and asks for the rate of a held asset that has none', () => {
         const state = createState([account], {
             rates: { ...mockRate(1, USDC), ...mockRate(20, ENS) },
         });
 
-        expect(totalOf(state, account)).toEqual(new BigNumber('1022.4'));
+        expect(totalOf(state, account)).toBe('1022.4');
         expect(flagsOf(state, account)).toEqual({
             missing: [{ symbol: ETH, tokenAddress: undefined }],
             isIncomplete: true,
@@ -342,13 +398,14 @@ describe('the fiat total of an account', () => {
         });
         const state = createState([holder], { shownTokens: [SHOWN_UNKNOWN] });
 
-        expect(rowsOf(state, holder)).toEqual([['UNKNOWN', '5', undefined]]);
+        expect(rowsOf(state, holder)).toEqual([['UNKNOWN', '5']]);
         expect(flagsOf(state, holder).missing).toEqual([]);
     });
 
     it('keeps the missing tickers across a recreated state', () => {
-        const rates = { ...mockRate(1, USDC), ...mockRate(20, ENS) };
-        const state = createState([account], { rates });
+        const state = createState([account], {
+            rates: { ...mockRate(1, USDC), ...mockRate(20, ENS) },
+        });
 
         expect(selectAccountAssetMissingRateTickerIds(state, account.key)).toBe(
             selectAccountAssetMissingRateTickerIds(state, account.key),

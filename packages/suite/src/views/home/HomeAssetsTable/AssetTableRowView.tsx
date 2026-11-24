@@ -1,3 +1,5 @@
+import { type ReactNode } from 'react';
+
 import { type TokenAddress, type TokenSymbol } from '@suite-common/tokens';
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { Column, Table } from '@trezor/components';
@@ -16,6 +18,8 @@ type AssetTableRowViewProps = {
     tokenSymbol: TokenSymbol | null;
     tokenDecimals: number | undefined;
     amount: string | undefined;
+    /** Shown by the asset's name in place of the rate it can earn. */
+    badge?: ReactNode;
     onOpen: () => void;
     hasBorderTop?: boolean;
     assetNameTestId?: string;
@@ -29,6 +33,7 @@ export const AssetTableRowView = ({
     tokenSymbol,
     tokenDecimals,
     amount,
+    badge,
     onOpen,
     hasBorderTop,
     assetNameTestId,
@@ -40,12 +45,14 @@ export const AssetTableRowView = ({
                 symbol={networkSymbol}
                 contractAddress={contractAddress}
                 badge={
-                    <HomeAssetApyBadge
-                        symbol={networkSymbol}
-                        contractAddress={contractAddress}
-                        tokenSymbol={tokenSymbol}
-                        tokenDecimals={tokenDecimals}
-                    />
+                    badge ?? (
+                        <HomeAssetApyBadge
+                            symbol={networkSymbol}
+                            contractAddress={contractAddress}
+                            tokenSymbol={tokenSymbol}
+                            tokenDecimals={tokenDecimals}
+                        />
+                    )
                 }
             />
         </Table.Cell>

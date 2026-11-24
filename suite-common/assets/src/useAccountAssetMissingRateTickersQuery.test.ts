@@ -7,7 +7,7 @@ import { useMissingRateTickersQuery } from '@suite-common/wallet-core';
 import { type Account, type AccountKey } from '@suite-common/wallet-types';
 import { type StaticSessionId } from '@trezor/device-utils';
 
-import { type HomeAssetTableState } from './homeAssetTableSelectors';
+import { type AccountAssetsRootState } from './accountAssetSelectors';
 import { useAccountAssetMissingRateTickersQuery } from './useAccountAssetMissingRateTickersQuery';
 
 // The query fetches rates over the network; here it only reports what it was asked for.
@@ -36,7 +36,7 @@ const renderQuery = (isFetching: boolean) => {
         typeof useMissingRateTickersQuery
     >);
 
-    const { services } = createTestCompositionRoot<void, HomeAssetTableState>({
+    const { services } = createTestCompositionRoot<void, AccountAssetsRootState>({
         preloadedState: {
             earn: { staking: { positions: {}, products: {} } },
             device: { selectedDevice: { state: { staticSessionId: ALICE } } },
@@ -47,7 +47,7 @@ const renderQuery = (isFetching: boolean) => {
             },
             tokenDefinitions: {},
             networks: { [ETH]: { symbol: ETH, name: 'Ethereum' } },
-        } as unknown as HomeAssetTableState,
+        } as unknown as AccountAssetsRootState,
     });
 
     return renderHookWithStoreProvider(() => useAccountAssetMissingRateTickersQuery(account.key), {

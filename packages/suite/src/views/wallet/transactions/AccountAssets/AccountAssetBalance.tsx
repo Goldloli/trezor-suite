@@ -1,14 +1,15 @@
 import { Translation } from '@suite/intl';
 import { selectShouldAnimateLoadingSkeleton } from '@suite/ui-animations';
 import {
-    selectHomeAssetTotals,
+    selectAccountAssetCount,
+    selectAccountAssetTotalFiatValue,
     selectIsAccountAssetFiatTotalIncomplete,
     selectIsAccountAssetFiatTotalUnavailable,
-    selectShownWalletAssetKeys,
     useAccountAssetMissingRateTickersQuery,
 } from '@suite-common/assets';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { Box, Column, Row } from '@trezor/components';
+import { BigNumber } from '@trezor/utils';
 
 import { NoRatesTooltip } from '#src/components/suite/Ticker/NoRatesTooltip';
 import { useSelector } from '#src/hooks/suite/useSelector';
@@ -25,8 +26,11 @@ type AccountAssetBalanceProps = {
 
 /** What the account is worth in total, and how many assets make it up. */
 export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) => {
-    const assetCount = useSelector(state => selectShownWalletAssetKeys(state, accountKey).length);
-    const { fiatValue } = useSelector(state => selectHomeAssetTotals(state, accountKey));
+    const assetCount = useSelector(state => selectAccountAssetCount(state, accountKey));
+    const totalFiatValue = useSelector(state =>
+        selectAccountAssetTotalFiatValue(state, accountKey),
+    );
+    const fiatValue = totalFiatValue === undefined ? undefined : new BigNumber(totalFiatValue);
     const { isFiatRatesLoading } = useAccountAssetMissingRateTickersQuery(accountKey);
     const isIncomplete = useSelector(state =>
         selectIsAccountAssetFiatTotalIncomplete(state, accountKey, isFiatRatesLoading),

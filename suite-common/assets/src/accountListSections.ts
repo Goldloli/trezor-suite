@@ -27,6 +27,7 @@ import {
     sortTokensByName,
     toFiatCurrency,
 } from '@suite-common/wallet-utils';
+import { type TokenInfo } from '@trezor/blockchain-link-types';
 import { createWeakMapSelector } from '@trezor/redux-utils';
 
 export type AccountListSectionsRootState = AccountsRootState &
@@ -69,6 +70,8 @@ export type GetAccountListSectionsParams = {
     isStakingActive: boolean;
     stakingCryptoBalance: string;
     groupZeroBalance?: boolean;
+    /** Vault tokens (ERC-4626) among the tokens; mobile lists them in its DeFi tab instead. */
+    areVaultTokensListed?: boolean;
     fiatRates?: RatesByKey;
     localCurrency?: ReturnType<typeof selectBaseCurrency>;
 };
@@ -79,10 +82,12 @@ export const getAccountListSections = ({
     isStakingActive,
     stakingCryptoBalance,
     groupZeroBalance = false,
+    areVaultTokensListed = false,
     fiatRates,
     localCurrency,
 }: GetAccountListSectionsParams) => {
     const sections: AccountListSection[] = [];
+    const isListed = (token: TokenInfo) => areVaultTokensListed || !isErc4626(token);
     const isNetworkSupportingTokens = isNetworkWithTokens(account.symbol);
 
     const { shownWithBalance: tokensWithBalance, shownWithoutBalance } = getTokens({
@@ -92,7 +97,7 @@ export const getAccountListSections = ({
     });
 
     const zeroBalanceTokens: TokenInfoBranded[] = groupZeroBalance
-        ? (shownWithoutBalance.filter(token => !isErc4626(token)) as TokenInfoBranded[])
+        ? (shownWithoutBalance.filter(isListed) as TokenInfoBranded[])
         : [];
 
     const hasAnyKnownTokens =
@@ -130,7 +135,7 @@ export const getAccountListSections = ({
         };
 
         const tokensToShow = tokensWithBalance
-            .filter(token => !isErc4626(token))
+            .filter(isListed)
             .sort((a, b) => getTokenFiatValue(b) - getTokenFiatValue(a));
         tokensToShow.forEach((token, index) => {
             sections.push({
@@ -155,29 +160,37 @@ export const getAccountListSections = ({
 
 const EMPTY_ARRAY: AccountListSection[] = [];
 
-export const selectAccountListSectionsWithZeroBalanceGroup = createMemoizedSelector(
-    [
-        selectAccountByKey,
-        selectTokenDefinitions,
-        selectCurrentFiatRates,
-        selectBaseCurrency,
-        selectIsStakingAccountActive,
-        selectStakingAccountAmount,
-    ],
-    (account, tokenDefinitions, fiatRates, localCurrency, isStakingActive, stakingAmount) => {
-        if (!account) return EMPTY_ARRAY;
+const createAccountListSectionsSelector = (areVaultTokensListed: boolean) =>
+    createMemoizedSelector(
+        [
+            selectAccountByKey,
+            selectTokenDefinitions,
+            selectCurrentFiatRates,
+            selectBaseCurrency,
+            selectIsStakingAccountActive,
+            selectStakingAccountAmount,
+        ],
+        (account, tokenDefinitions, fiatRates, localCurrency, isStakingActive, stakingAmount) => {
+            if (!account) return EMPTY_ARRAY;
 
-        return getAccountListSections({
-            account,
-            tokenDefinitions: tokenDefinitions[account.symbol]?.coin,
-            isStakingActive,
-            stakingCryptoBalance: formatStakingAmount({
-                amount: stakingAmount,
-                networkSymbol: account.symbol,
-            }),
-            groupZeroBalance: true,
-            fiatRates,
-            localCurrency,
-        });
-    },
-);
+            return getAccountListSections({
+                account,
+                tokenDefinitions: tokenDefinitions[account.symbol]?.coin,
+                isStakingActive,
+                stakingCryptoBalance: formatStakingAmount({
+                    amount: stakingAmount,
+                    networkSymbol: account.symbol,
+                }),
+                groupZeroBalance: true,
+                areVaultTokensListed,
+                fiatRates,
+                localCurrency,
+            });
+        },
+    );
+
+export const selectAccountListSectionsWithZeroBalanceGroup =
+    createAccountListSectionsSelector(false);
+
+/** The same sections with the vault tokens among the tokens, as the desktop account overview lists them. */
+export const selectAccountListSectionsWithVaultTokens = createAccountListSectionsSelector(true);
