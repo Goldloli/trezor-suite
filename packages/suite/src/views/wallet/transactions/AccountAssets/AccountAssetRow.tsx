@@ -1,20 +1,25 @@
 import { memo } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
-import { Translation } from '@suite/intl';
 import { gotoThunk } from '@suite/router';
-import { type AccountAssetRow as AccountAssetRowData } from '@suite-common/assets';
-import { Badge } from '@trezor/components';
+import { type TokenAddress, type TokenSymbol } from '@suite-common/tokens';
+import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
 import { AssetTableRowView } from '#src/views/home/HomeAssetsTable/AssetTableRowView';
 
-type AccountAssetRowProps = Omit<AccountAssetRowData, 'key'>;
+type AccountAssetRowProps = {
+    networkSymbol: NetworkSymbol;
+    /** Left out for the account's coin. */
+    contractAddress?: TokenAddress;
+    tokenSymbol?: TokenSymbol;
+    tokenDecimals?: number;
+    amount: string;
+};
 
-/** A Home asset row with what one account holds: its coin, its stake, or a token. */
+/** A Home asset row with what one account holds of its coin or of a token; it opens the asset. */
 export const AccountAssetRow = memo(function AccountAssetRow({
-    kind,
     networkSymbol,
     contractAddress,
     tokenSymbol,
@@ -22,26 +27,22 @@ export const AccountAssetRow = memo(function AccountAssetRow({
     amount,
 }: AccountAssetRowProps) {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
-    const isStaking = kind === 'staking';
 
-    // The stake opens the account's Staking; anything else opens the asset.
-    const open = () => {
+    const openAsset = () => {
         analytics.report({
             type: events.navigateFlowEvent.name,
             payload: {
                 action: 'navigate',
-                type: isStaking ? 'earn' : 'asset',
+                type: 'asset',
                 from: 'account-overview',
                 networkSymbol,
             },
         });
         dispatch(
-            isStaking
-                ? gotoThunk({ routeName: 'wallet-staking', preserveParams: true })
-                : gotoThunk({
-                      routeName: 'suite-asset',
-                      params: { symbol: networkSymbol, contractAddress },
-                  }),
+            gotoThunk({
+                routeName: 'suite-asset',
+                params: { symbol: networkSymbol, contractAddress },
+            }),
         );
     };
 
@@ -49,18 +50,11 @@ export const AccountAssetRow = memo(function AccountAssetRow({
         <AssetTableRowView
             networkSymbol={networkSymbol}
             contractAddress={contractAddress}
-            tokenSymbol={tokenSymbol}
+            tokenSymbol={tokenSymbol ?? null}
             tokenDecimals={tokenDecimals}
             amount={amount}
-            badge={
-                isStaking ? (
-                    <Badge size="small">
-                        <Translation id="TR_STAKE_STAKED" />
-                    </Badge>
-                ) : undefined
-            }
-            onOpen={open}
-            data-testid={`@wallet/account-asset/${networkSymbol}/${isStaking ? 'staking' : (contractAddress ?? 'coin')}`}
+            onOpen={openAsset}
+            data-testid={`@wallet/account-asset/${networkSymbol}/${contractAddress ?? 'coin'}`}
         />
     );
 });

@@ -1,23 +1,15 @@
 import { Translation } from '@suite/intl';
-import { selectShouldAnimateLoadingSkeleton } from '@suite/ui-animations';
 import {
-    selectAccountAssetCount,
-    selectAccountAssetTotalFiatValue,
-    selectIsAccountAssetFiatTotalIncomplete,
-    selectIsAccountAssetFiatTotalUnavailable,
-    useAccountAssetMissingRateTickersQuery,
+    selectAccountFiatBalance,
+    selectAccountListSectionsWithVaultTokens,
 } from '@suite-common/assets';
 import { type AccountKey } from '@suite-common/wallet-types';
-import { Box, Column, Row } from '@trezor/components';
-import { BigNumber } from '@trezor/utils';
+import { isPositiveBalance } from '@suite-common/wallet-utils';
+import { Box, Column } from '@trezor/components';
 
-import { NoRatesTooltip } from '#src/components/suite/Ticker/NoRatesTooltip';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { useAccountHeaderContext } from '#src/support/suite/AccountHeaderProvider';
-import {
-    TOTAL_BALANCE_HEIGHT,
-    TotalBalanceCard,
-} from '#src/views/home/HomeBalance/TotalBalanceCard';
+import { TotalBalanceCard } from '#src/views/home/HomeBalance/TotalBalanceCard';
 import { TotalBalanceHeadline } from '#src/views/home/HomeBalance/TotalBalanceHeadline';
 
 type AccountAssetBalanceProps = {
@@ -26,23 +18,22 @@ type AccountAssetBalanceProps = {
 
 /** What the account is worth in total, and how many assets make it up. */
 export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) => {
-    const assetCount = useSelector(state => selectAccountAssetCount(state, accountKey));
-    const totalFiatValue = useSelector(state =>
-        selectAccountAssetTotalFiatValue(state, accountKey),
-    );
-    const fiatValue = totalFiatValue === undefined ? undefined : new BigNumber(totalFiatValue);
-    const { isFiatRatesLoading } = useAccountAssetMissingRateTickersQuery(accountKey);
-    const isIncomplete = useSelector(state =>
-        selectIsAccountAssetFiatTotalIncomplete(state, accountKey, isFiatRatesLoading),
-    );
-    const isUnavailable = useSelector(state =>
-        selectIsAccountAssetFiatTotalUnavailable(state, accountKey, isFiatRatesLoading),
-    );
-    const shouldAnimateSkeleton = useSelector(selectShouldAnimateLoadingSkeleton);
+    // The coin counts once, whether it is held, staked or both; each token counts on its own.
+    const assetCount = useSelector(state => {
+        const sections = selectAccountListSectionsWithVaultTokens(state, accountKey);
+        const isCoinHeld = sections.some(
+            section =>
+                (section.type === 'account' &&
+                    isPositiveBalance(section.account.formattedBalance)) ||
+                (section.type === 'staking' && isPositiveBalance(section.stakingCryptoBalance)),
+        );
+
+        return sections.filter(section => section.type === 'token').length + (isCoinHeld ? 1 : 0);
+    });
+    const fiatValue = useSelector(state => selectAccountFiatBalance(state, accountKey));
     const { balanceSectionRef } = useAccountHeaderContext();
 
     return (
-        // The header watches this section; the card stays mounted while its total is loading.
         <Box ref={balanceSectionRef} flex="1" minWidth={280}>
             <TotalBalanceCard
                 label={<Translation id="TR_ACCOUNT_ASSETS_BALANCE" />}
@@ -51,28 +42,14 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
                         <Translation id="TR_ACCOUNT_ASSETS_COUNT" values={{ count: assetCount }} />
                     </span>
                 }
-                // A total already priced in part stays while the rest is fetched.
-                isLoading={fiatValue === undefined && isFiatRatesLoading}
-                isSkeletonAnimated={shouldAnimateSkeleton}
                 isStretched
                 data-testid="@wallet/account-assets/balance"
             >
                 <Column alignItems="flex-start">
                     <TotalBalanceHeadline
                         fiatValue={fiatValue}
-                        isApproximate={isIncomplete}
                         data-testid="@wallet/account-assets/fiat-amount"
                     />
-                    {/* Nothing is priced and no rate is on its way: say there is none. */}
-                    {isUnavailable && (
-                        <Row
-                            height={TOTAL_BALANCE_HEIGHT}
-                            alignItems="flex-start"
-                            data-testid="@wallet/account-assets/no-rate"
-                        >
-                            <NoRatesTooltip />
-                        </Row>
-                    )}
                 </Column>
             </TotalBalanceCard>
         </Box>

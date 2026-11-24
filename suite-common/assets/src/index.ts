@@ -1,3 +1,4 @@
+export * from './accountFiatBalance';
 export * from './accountListSections';
 export * from './assetAccountsSelectors';
 export * from './assetSelectors';
@@ -11,6 +12,5 @@ export {
 } from './utils';
 export * from './homeAssetTableFeedbackThunks';
 export * from './homeAssetTableSelectors';
-export * from './accountAssetSelectors';
-export * from './useAccountAssetMissingRateTickersQuery';
 export * from './homeAssetTableUtils';
+export * from './stakingSplitUtils';

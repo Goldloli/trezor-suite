@@ -77,6 +77,25 @@ describe('getAccountListSections', () => {
         expect(tokenNames).toEqual(['Token1', 'Token3']);
     });
 
+    it('lists a vault token among the tokens only where asked, as mobile keeps it in its DeFi tab', () => {
+        const accountWithVaultToken = {
+            ...mockAccount,
+            tokens: [{ ...mockAccount.tokens?.[0], protocols: ['erc4626'] }],
+        } as Account;
+        const tokenNames = (areVaultTokensListed: boolean) =>
+            getAccountListSections({
+                account: accountWithVaultToken,
+                tokenDefinitions: mockTokenDefinitions,
+                areVaultTokensListed,
+                ...idleStaking,
+            })
+                .filter(section => section.type === 'token')
+                .map(section => section.token.name);
+
+        expect(tokenNames(false)).toEqual([]);
+        expect(tokenNames(true)).toEqual(['Token1']);
+    });
+
     it('should handle account with no tokens', () => {
         const accountWithoutTokens: Account = {
             ...mockAccount,

@@ -6,10 +6,7 @@ import {
     selectDeviceStaticSessionId,
     selectIsPortfolioTrackerDevice,
 } from '@suite-common/device';
-import {
-    type StakingRootState,
-    selectStakingAccountAmountOutsideBalance,
-} from '@suite-common/earn-staking';
+import { type StakingRootState } from '@suite-common/earn-staking';
 import { type NetworksRootState, selectSupportedNetworkSymbols } from '@suite-common/networks';
 import {
     type SuiteSyncDataRootState,
@@ -37,12 +34,10 @@ import {
     type AccountDescriptor,
     type AccountKey,
     areBaseCurrencyAmountsEqual,
-    asBaseCurrencyAmount,
     createAccountKey,
 } from '@suite-common/wallet-types';
 import {
     BASE_CURRENCY_ZERO,
-    getAccountFiatBalance,
     getFiatRateKey,
     isAccountFailed,
     toFiatCurrency,
@@ -242,39 +237,6 @@ export const selectNetworkFilterOptions = createNetworkMemoizedSelector(
 export const selectIsAccountsListNetworkFilterVisible = createNetworkMemoizedSelector(
     [selectNetworkFilterOptions],
     networkFilterOptions => networkFilterOptions.length > 1,
-);
-
-export const selectAccountFiatBalance = createMemoizedSelector(
-    [
-        selectCurrentFiatRates,
-        selectAccountByKey,
-        selectAccountTokens,
-        selectBaseCurrency,
-        selectStakingAccountAmountOutsideBalance,
-        (_, _accountKey: AccountKey, shouldIncludeTokens?: boolean) => shouldIncludeTokens ?? true,
-    ],
-    (fiatRates, account, tokenCategories, localCurrency, stakingBalance, shouldIncludeTokens) => {
-        if (!account) {
-            return BASE_CURRENCY_ZERO;
-        }
-
-        const totalBalance = getAccountFiatBalance({
-            account: { ...account, tokens: tokenCategories?.shownWithBalance ?? [] },
-            rates: fiatRates,
-            baseCurrencyCode: localCurrency,
-            stakingBalance,
-            shouldIncludeTokens,
-        });
-
-        return totalBalance ? asBaseCurrencyAmount(totalBalance) : BASE_CURRENCY_ZERO;
-    },
-    {
-        memoizeOptions: {
-            // Accounts and fiat rates churn on every sync; keep the previous BigNumber reference
-            // when the amount is unchanged so useSelector consumers don't rerender.
-            resultEqualityCheck: areBaseCurrencyAmountsEqual,
-        },
-    },
 );
 
 export const selectAccountTokenFiatBalance = createMemoizedSelector(

@@ -1,15 +1,15 @@
 import { getStakingPositionAmount } from '@suite-common/earn-staking-common';
 import {
     type EarnFiatPosition,
+    type EarnFiatValuation,
     type FiatRatesRootState,
-    type FiatValuation,
     type WalletSettingsRootState,
     createStableFiatRateKeys,
     createStableTickerId,
     getEarnPositionFiatAmount,
     selectBaseCurrency,
     selectCurrentFiatRatesByFiatRateKeys,
-    sumFiatValuations,
+    sumEarnFiatValuations,
 } from '@suite-common/wallet-core';
 import type { CryptoBaseCurrencyPair, TickerId } from '@suite-common/wallet-types';
 import { getFiatRateKey } from '@suite-common/wallet-utils';
@@ -69,7 +69,7 @@ const selectDeviceStakingCurrentFiatRates = (state: StakingFiatRootState) =>
 
 export const selectDeviceStakingFiatValuations = createWeakMapSelector(
     [selectDeviceStakingFiatPositions, selectDeviceStakingCurrentFiatRates],
-    (positions, currentFiatRates): readonly FiatValuation[] =>
+    (positions, currentFiatRates): readonly EarnFiatValuation[] =>
         returnStableArrayIfEmpty(
             positions.map(position => ({
                 tickerId: position.tickerId,
@@ -80,5 +80,5 @@ export const selectDeviceStakingFiatValuations = createWeakMapSelector(
 
 export const selectDeviceStakingTotalFiatAmount = createWeakMapSelector(
     [selectDeviceStakingFiatValuations],
-    (valuations): string => sumFiatValuations(valuations),
+    (valuations): string => sumEarnFiatValuations(valuations),
 );

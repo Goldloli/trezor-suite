@@ -1,9 +1,9 @@
 import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { gotoThunk } from '@suite/router';
 import {
-    selectAccountAvailableAmount,
-    selectAccountStakingAmount,
-    selectAccountStakingRatio,
+    getAvailableAmount,
+    getStakingRatio,
+    selectAccountListSectionsWithVaultTokens,
 } from '@suite-common/assets';
 import { selectAccountCryptoBalanceWithStaking } from '@suite-common/earn-staking';
 import { isSupportedStakingNetworkSymbol, selectAccountByKey } from '@suite-common/wallet-core';
@@ -25,9 +25,16 @@ export const AccountAssetEarn = ({ accountKey }: AccountAssetEarnProps) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
     const networkSymbol = useSelector(state => selectAccountByKey(state, accountKey)?.symbol);
     const amount = useSelector(state => selectAccountCryptoBalanceWithStaking(state, accountKey));
-    const availableAmount = useSelector(state => selectAccountAvailableAmount(state, accountKey));
-    const stakingAmount = useSelector(state => selectAccountStakingAmount(state, accountKey));
-    const stakingRatio = useSelector(state => selectAccountStakingRatio(state, accountKey)) ?? 0;
+    // What the account stakes is what its list shows on the stake's row.
+    const stakingAmount = useSelector(state => {
+        const staking = selectAccountListSectionsWithVaultTokens(state, accountKey).find(
+            section => section.type === 'staking',
+        );
+
+        return staking?.type === 'staking' ? staking.stakingCryptoBalance : '0';
+    });
+    const availableAmount = getAvailableAmount(amount, stakingAmount);
+    const stakingRatio = getStakingRatio(amount, stakingAmount) ?? 0;
     const { rate: apy } = useStakingRate({ symbol: networkSymbol, accountKey });
 
     if (

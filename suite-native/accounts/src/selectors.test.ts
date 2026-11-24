@@ -1,4 +1,7 @@
-import { selectAccountListSectionsWithZeroBalanceGroup } from '@suite-common/assets';
+import {
+    selectAccountFiatBalance,
+    selectAccountListSectionsWithZeroBalanceGroup,
+} from '@suite-common/assets';
 import { mockStakingState } from '@suite-common/earn-staking/mocks';
 import { stakingAmountSchema } from '@suite-common/earn-staking-common';
 import { mockStakingPosition } from '@suite-common/earn-staking-common/mocks';
@@ -24,7 +27,6 @@ import { getFiatRateKey } from '@suite-common/wallet-utils';
 
 import {
     type NativeAccountsRootState,
-    selectAccountFiatBalance,
     selectAccountVisibleTokensCount,
     selectFreshAccountAddress,
     selectHasDeviceAnyFailedAccountForNetworkSymbol,

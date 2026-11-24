@@ -60,7 +60,6 @@ export * from './fiat-rates/fiatRatesReducer';
 export * from './fiat-rates/fiatRatesSelectors';
 export * from './fiat-rates/fiatRatesThunks';
 export type * from './fiat-rates/fiatRatesTypes';
-export * from './fiat-rates/fiatValuationUtils';
 export * from './fiat-rates/useMissingRateTickersQuery';
 export * from './formDrafts';
 export * from './named-address/namedAddressQuery';

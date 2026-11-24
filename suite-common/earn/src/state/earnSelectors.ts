@@ -4,16 +4,15 @@ import {
     selectDeviceStakingPositionsCount,
 } from '@suite-common/earn-staking';
 import {
+    type EarnFiatValuation,
     type EarnListRootState,
-    type FiatValuation,
     type YieldOpportunity,
     createStableTickerIds,
-    getIsFiatTotalIncomplete,
-    getIsFiatTotalUnavailable,
-    getMissingRateTickerIds,
+    getEarnMissingRateTickerIds,
+    hasAnyEarnFiatRate,
     selectYieldFiatValuations,
     selectYieldPositionsCount,
-    sumFiatValuations,
+    sumEarnFiatValuations,
 } from '@suite-common/wallet-core';
 import { createWeakMapSelector, returnStableArrayIfEmpty } from '@trezor/redux-utils';
 
@@ -29,28 +28,30 @@ const selectIsFiatRatesLoadingParam = (
 
 export const selectEarnFiatValuations = createMemoizedSelector(
     [selectDeviceStakingFiatValuations, selectYieldFiatValuations],
-    (stakingFiatValuations, yieldFiatValuations): readonly FiatValuation[] =>
+    (stakingFiatValuations, yieldFiatValuations): readonly EarnFiatValuation[] =>
         returnStableArrayIfEmpty([...stakingFiatValuations, ...yieldFiatValuations]),
 );
 
 export const selectEarnTotalFiatAmount = createMemoizedSelector(
     [selectEarnFiatValuations],
-    (valuations): string => sumFiatValuations(valuations),
+    (valuations): string => sumEarnFiatValuations(valuations),
 );
 
 export const selectEarnMissingTickerIds = createMemoizedSelector(
     [selectEarnFiatValuations],
-    valuations => createStableTickerIds(...getMissingRateTickerIds(valuations)),
+    valuations => createStableTickerIds(...getEarnMissingRateTickerIds(valuations)),
 );
 
 export const selectIsEarnFiatTotalIncomplete = createMemoizedSelector(
-    [selectEarnFiatValuations, selectIsFiatRatesLoadingParam],
-    getIsFiatTotalIncomplete,
+    [selectEarnMissingTickerIds, selectIsFiatRatesLoadingParam],
+    (missingTickerIds, isFiatRatesLoading): boolean =>
+        missingTickerIds.length > 0 && !isFiatRatesLoading,
 );
 
 export const selectIsEarnFiatTotalUnavailable = createMemoizedSelector(
-    [selectEarnFiatValuations, selectIsFiatRatesLoadingParam],
-    getIsFiatTotalUnavailable,
+    [selectIsEarnFiatTotalIncomplete, selectEarnFiatValuations],
+    (isFiatTotalIncomplete, valuations): boolean =>
+        isFiatTotalIncomplete && !hasAnyEarnFiatRate(valuations),
 );
 
 export const selectIsEarnBalanceBreakdownDisplayed = createMemoizedSelector(

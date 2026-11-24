@@ -8,7 +8,6 @@ import { mockDesktopAnalytics } from '@suite/analytics/mocks';
 import { messages } from '@suite/intl';
 import { type SuiteRouterHistoryDep } from '@suite/router';
 import { mockSuiteRouterHistory } from '@suite/router/mocks';
-import { useAccountAssetMissingRateTickersQuery } from '@suite-common/assets';
 import { mockStakingState } from '@suite-common/earn-staking/mocks';
 import { stakingAmountSchema } from '@suite-common/earn-staking-common';
 import { mockStakingPosition } from '@suite-common/earn-staking-common/mocks';
@@ -28,12 +27,6 @@ import { renderWithProviders } from '#src/support/test-utils/hooksHelper';
 import { AccountAssetOverview } from './AccountAssetOverview';
 import { type MockSuiteState, mockInitialAppState } from '../../../../../mocks/mockInitialAppState';
 
-// The query fetches rates over the network; a test only says whether it is still fetching.
-jest.mock('@suite-common/assets', () => ({
-    ...jest.requireActual('@suite-common/assets'),
-    useAccountAssetMissingRateTickersQuery: jest.fn(),
-}));
-
 global.ResizeObserver = class MockedResizeObserver {
     observe = jest.fn();
     unobserve = jest.fn();
@@ -48,9 +41,6 @@ const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as TokenAddress;
 const ONE_INCH = '0x111111111117dc0aa78b770fa6a738034120c302' as TokenAddress;
 
 const mockRate = (rate: number) => ({ rate, usdRate: rate }) as CurrentRate;
-
-/** A rate whose fetch failed: it holds no number and is not being fetched again. */
-const FAILED_RATE = { isLoading: false, error: 'Failed to fetch' } as CurrentRate;
 
 const amount = (value: string) => stakingAmountSchema.parse(value);
 
@@ -148,17 +138,10 @@ const getState = (
     },
 });
 
-type RenderOverviewOptions = Partial<GetStateOptions> & {
-    /** Whether the rates the total lacks are still being fetched. */
-    isFiatRatesLoading?: boolean;
-};
-
 const renderOverview = (
     accounts: Account[],
-    { rates = PRICED_RATES, isFiatRatesLoading = false, ...options }: RenderOverviewOptions = {},
+    { rates = PRICED_RATES, ...options }: Partial<GetStateOptions> = {},
 ) => {
-    jest.mocked(useAccountAssetMissingRateTickersQuery).mockReturnValue({ isFiatRatesLoading });
-
     const analytics = mockDesktopAnalytics();
     const { services } = createTestCompositionRoot<
         { services: DesktopAnalyticsDep & SuiteRouterHistoryDep },
@@ -259,56 +242,18 @@ describe('the account overview with the asset-first Home', () => {
         expect(rowTestIds()).toContain(`@wallet/account-asset/eth/${ONE_INCH}`);
     });
 
-    it('waits for the rates with a placeholder while nothing is priced yet', () => {
-        renderOverview([ethAccount], { rates: {}, isFiatRatesLoading: true });
-
-        expect(screen.getByTestId('@wallet/account-assets/balance/skeleton')).toBeInTheDocument();
-        expect(screen.queryByTestId('@wallet/account-assets/fiat-amount')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('@wallet/account-assets/no-rate')).not.toBeInTheDocument();
-    });
-
-    it('says the rate is not available once no asset can be priced', () => {
+    it('counts an asset without a rate as nothing, as the mobile account total does', () => {
         renderOverview([ethAccount], {
             rates: {
-                [getFiatRateKey(ETH, 'usd')]: FAILED_RATE,
-                [getFiatRateKey(ETH, 'usd', USDC)]: FAILED_RATE,
-                [getFiatRateKey(ETH, 'usd', ONE_INCH)]: FAILED_RATE,
-            },
-        });
-
-        expect(screen.getByTestId('@wallet/account-assets/no-rate')).toHaveTextContent(
-            messages.TR_FIAT_RATES_NOT_AVAILABLE.defaultMessage,
-        );
-        expect(
-            screen.queryByTestId('@wallet/account-assets/balance/skeleton'),
-        ).not.toBeInTheDocument();
-        expect(screen.queryByTestId('@wallet/account-assets/fiat-amount')).not.toBeInTheDocument();
-    });
-
-    it('marks the total as approximate when an asset it holds cannot be priced', () => {
-        renderOverview([ethAccount], {
-            rates: {
-                [getFiatRateKey(ETH, 'usd')]: FAILED_RATE,
+                [getFiatRateKey(ETH, 'usd')]: mockRate(3000),
                 [getFiatRateKey(ETH, 'usd', USDC)]: mockRate(1),
-                [getFiatRateKey(ETH, 'usd', ONE_INCH)]: mockRate(0.29),
             },
         });
 
-        // 1,000 USDC at $1 and 2.1 1INCH at $0.29; the ether is left out.
+        // 1.2 ETH + 0.5 ETH staked at $3,000 and 1,000 USDC at $1; the 1INCH has no rate.
         expect(screen.getByTestId('@wallet/account-assets/fiat-amount')).toHaveTextContent(
-            '$1,000.61',
+            '$6,100.00',
         );
-        expect(
-            screen.getByTestId('@wallet/account-assets/fiat-amount/approximate'),
-        ).toHaveTextContent('≈');
-    });
-
-    it('does not mark a total that every asset is in', () => {
-        renderOverview([ethAccount]);
-
-        expect(
-            screen.queryByTestId('@wallet/account-assets/fiat-amount/approximate'),
-        ).not.toBeInTheDocument();
     });
 
     describe('what navigating away from it reports', () => {

@@ -3,7 +3,7 @@ import { type ReactNode } from 'react';
 import { Card, Column, Row, Skeleton, Text } from '@trezor/components';
 
 /** The line height of the total headline, so what stands in for it keeps the card from jumping. */
-export const TOTAL_BALANCE_HEIGHT = 56;
+const TOTAL_BALANCE_HEIGHT = 56;
 
 type TotalBalanceCardProps = {
     label: ReactNode;
@@ -11,7 +11,6 @@ type TotalBalanceCardProps = {
     labelAside?: ReactNode;
     /** The total is not known yet, so a placeholder takes the place of the content. */
     isLoading?: boolean;
-    isSkeletonAnimated?: boolean;
     /** Fills the height the card is given, the label small at the top and the total at the bottom. */
     isStretched?: boolean;
     /** The total headline and whatever goes under it. */
@@ -24,7 +23,6 @@ export const TotalBalanceCard = ({
     label,
     labelAside,
     isLoading = false,
-    isSkeletonAnimated,
     isStretched = false,
     children,
     'data-testid': dataTestId,
@@ -63,11 +61,7 @@ export const TotalBalanceCard = ({
                             dataTestId === undefined ? undefined : `${dataTestId}/skeleton`
                         }
                     >
-                        <Skeleton
-                            width={180}
-                            height={TOTAL_BALANCE_HEIGHT}
-                            animate={isSkeletonAnimated}
-                        />
+                        <Skeleton width={180} height={TOTAL_BALANCE_HEIGHT} />
                     </Row>
                 ) : (
                     children

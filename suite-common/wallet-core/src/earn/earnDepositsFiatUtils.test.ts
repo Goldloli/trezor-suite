@@ -4,11 +4,20 @@ import {
     type Rate,
     type RatesByKey,
     type TickerId,
+    asBaseCurrencyAmount,
     asCryptoBaseCurrencyCode,
     asTimestamp,
 } from '@suite-common/wallet-types';
+import { BigNumber } from '@trezor/utils';
 
-import { type EarnFiatPosition, getEarnPositionFiatAmount } from './earnDepositsFiatUtils';
+import {
+    type EarnFiatPosition,
+    type EarnFiatValuation,
+    getEarnMissingRateTickerIds,
+    getEarnPositionFiatAmount,
+    hasAnyEarnFiatRate,
+    sumEarnFiatValuations,
+} from './earnDepositsFiatUtils';
 
 const ethSymbol = asNetworkSymbol('eth');
 const adaSymbol = asNetworkSymbol('ada');
@@ -44,6 +53,11 @@ const createRates = (entries: [EarnFiatPosition, number | undefined][]): RatesBy
 
         return ratesByKey;
     }, {});
+
+const createValuation = (tickerId: TickerId, fiatAmount: string | null): EarnFiatValuation => ({
+    tickerId,
+    fiatAmount: fiatAmount === null ? null : asBaseCurrencyAmount(new BigNumber(fiatAmount)),
+});
 
 describe(getEarnPositionFiatAmount.name, () => {
     it('multiplies the balance by the rate found under the position rate key', () => {
@@ -83,5 +97,56 @@ describe(getEarnPositionFiatAmount.name, () => {
         );
 
         expect(fiatAmount?.toFixed()).toBe('100');
+    });
+});
+
+describe(sumEarnFiatValuations.name, () => {
+    it('sums valued positions and skips positions without a fiat amount', () => {
+        const total = sumEarnFiatValuations([
+            createValuation(adaPosition.tickerId, '2.5'),
+            createValuation(usdcPosition.tickerId, null),
+            createValuation(usdcPosition.tickerId, '100'),
+        ]);
+
+        expect(total).toBe('102.5');
+    });
+
+    it('returns zero for no valuations', () => {
+        expect(sumEarnFiatValuations([])).toBe('0');
+    });
+});
+
+describe(getEarnMissingRateTickerIds.name, () => {
+    it('lists each ticker without a fiat amount once', () => {
+        const missingTickerIds = getEarnMissingRateTickerIds([
+            createValuation(adaPosition.tickerId, '2.5'),
+            createValuation(usdcPosition.tickerId, null),
+            createValuation({ symbol: ethSymbol, tokenAddress: usdcContract }, null),
+            createValuation({ symbol: adaSymbol }, null),
+        ]);
+
+        expect(missingTickerIds).toEqual([usdcPosition.tickerId, { symbol: adaSymbol }]);
+    });
+
+    it('returns an empty list when every position is valued', () => {
+        expect(getEarnMissingRateTickerIds([createValuation(adaPosition.tickerId, '1')])).toEqual(
+            [],
+        );
+    });
+});
+
+describe(hasAnyEarnFiatRate.name, () => {
+    it('is true when at least one position has a fiat amount', () => {
+        expect(
+            hasAnyEarnFiatRate([
+                createValuation(adaPosition.tickerId, null),
+                createValuation(usdcPosition.tickerId, '0'),
+            ]),
+        ).toBe(true);
+    });
+
+    it('is false when no position has a fiat amount', () => {
+        expect(hasAnyEarnFiatRate([createValuation(adaPosition.tickerId, null)])).toBe(false);
+        expect(hasAnyEarnFiatRate([])).toBe(false);
     });
 });

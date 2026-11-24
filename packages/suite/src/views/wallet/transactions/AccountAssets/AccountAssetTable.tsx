@@ -4,12 +4,14 @@ import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { Translation } from '@suite/intl';
 import { gotoThunk } from '@suite/router';
 import {
+    type AccountListSection,
     HOME_ASSET_ROW_LIMIT,
     getHomeAssetRowLimit,
-    selectAccountAssetRows,
-    selectAccountZeroBalanceAssetRows,
+    selectAccountListSectionsWithVaultTokens,
 } from '@suite-common/assets';
-import { type AccountKey } from '@suite-common/wallet-types';
+import { type TokenInfoBranded } from '@suite-common/tokens';
+import { type Account, type AccountKey } from '@suite-common/wallet-types';
+import { isPositiveBalance } from '@suite-common/wallet-utils';
 import { Card, Row, Table, TextButton } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
 import { CaretRightIcon } from '@trezor/icons';
@@ -24,6 +26,50 @@ import {
 import { DropdownRow } from '#src/views/wallet/tokens/DropdownRow';
 
 import { AccountAssetRow } from './AccountAssetRow';
+import { AccountStakingRow } from './AccountStakingRow';
+
+const renderTokenRow = (account: Account, token: TokenInfoBranded) => (
+    <AccountAssetRow
+        key={token.contract}
+        networkSymbol={account.symbol}
+        contractAddress={token.contract}
+        tokenSymbol={token.symbol}
+        tokenDecimals={token.decimals}
+        amount={token.balance ?? '0'}
+    />
+);
+
+/** The row of a section that holds something; the tokens held at zero are a group, not a row. */
+const renderHeldRow = (section: AccountListSection) => {
+    switch (section.type) {
+        case 'account':
+            return (
+                <AccountAssetRow
+                    key="coin"
+                    networkSymbol={section.account.symbol}
+                    amount={section.account.formattedBalance}
+                />
+            );
+        case 'staking':
+            return (
+                <AccountStakingRow
+                    key="staking"
+                    networkSymbol={section.account.symbol}
+                    amount={section.stakingCryptoBalance}
+                />
+            );
+        case 'token':
+            return renderTokenRow(section.account, section.token);
+        default:
+            return null;
+    }
+};
+
+/** A coin or a stake of nothing is not listed; a token row always holds something. */
+const isHeld = (section: AccountListSection) =>
+    (section.type === 'account' && isPositiveBalance(section.account.formattedBalance)) ||
+    (section.type === 'staking' && isPositiveBalance(section.stakingCryptoBalance)) ||
+    section.type === 'token';
 
 type AccountAssetTableProps = {
     accountKey: AccountKey;
@@ -37,10 +83,13 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isZeroBalanceOpen, setIsZeroBalanceOpen] = useState(false);
-    const rows = useSelector(state => selectAccountAssetRows(state, accountKey));
-    const zeroBalanceRows = useSelector(state =>
-        selectAccountZeroBalanceAssetRows(state, accountKey),
+    const sections = useSelector(state =>
+        selectAccountListSectionsWithVaultTokens(state, accountKey),
     );
+    const rows = sections.filter(isHeld);
+    const zeroBalanceSection = sections.find(section => section.type === 'zeroBalance');
+    const zeroBalanceTokens =
+        zeroBalanceSection?.type === 'zeroBalance' ? zeroBalanceSection.tokens : [];
     const isFoldable = rows.length > HOME_ASSET_ROW_LIMIT;
     const rowLimit = getHomeAssetRowLimit({ isFoldable, isExpanded });
     const shownRows = rowLimit === undefined ? rows : rows.slice(0, rowLimit);
@@ -53,7 +102,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
         dispatch(gotoThunk({ routeName: 'suite-hidden-tokens' }));
     };
 
-    if (rows.length === 0 && zeroBalanceRows.length === 0) {
+    if (rows.length === 0 && zeroBalanceTokens.length === 0) {
         return null;
     }
 
@@ -84,16 +133,14 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {shownRows.map(({ key, ...row }) => (
-                        <AccountAssetRow key={key} {...row} />
-                    ))}
+                    {shownRows.map(renderHeldRow)}
                     {isFoldable && (
                         <HomeAssetExpandRow
                             isExpanded={isExpanded}
                             onToggle={() => setIsExpanded(!isExpanded)}
                         />
                     )}
-                    {zeroBalanceRows.length > 0 && (
+                    {zeroBalanceSection !== undefined && zeroBalanceTokens.length > 0 && (
                         <Table.Row
                             onClick={() => setIsZeroBalanceOpen(!isZeroBalanceOpen)}
                             data-testid="@wallet/account-assets/zero-balance"
@@ -110,9 +157,10 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                         </Table.Row>
                     )}
                     {isZeroBalanceOpen &&
-                        zeroBalanceRows.map(({ key, ...row }) => (
-                            <AccountAssetRow key={key} {...row} />
-                        ))}
+                        zeroBalanceSection !== undefined &&
+                        zeroBalanceTokens.map(token =>
+                            renderTokenRow(zeroBalanceSection.account, token),
+                        )}
                 </Table.Body>
             </Table>
         </Card>
