@@ -39,11 +39,11 @@ export {
     joinReferralProgramThunk,
     leaveReferralProgramThunk,
 } from './referAFriendThunks';
+export type { ReferralProgram } from './referAFriendSchemas';
 export type {
     ReferralAccount,
     ReferralAccountStatus,
     ReferralError,
-    ReferralProgram,
     ReferralVoucher,
     ReferralVoucherStatus,
 } from './referAFriendTypes';

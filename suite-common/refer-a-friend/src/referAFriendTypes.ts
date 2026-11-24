@@ -1,12 +1,3 @@
-export type ReferralProgram = {
-    fiatCurrency: string;
-    rewardAmount: number;
-    friendDiscountPercentage: number;
-    minimumOrderAmount: number;
-    redemptionLimit: number;
-    termsUrl: string;
-};
-
 type InactiveReferralAccount = {
     status: 'none' | 'left';
     joinedAt: null;

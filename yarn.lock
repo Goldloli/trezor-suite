@@ -12994,6 +12994,7 @@ __metadata:
     "@trezor/type-utils": "workspace:*"
     "@trezor/urls": "workspace:*"
     "@trezor/utils": "workspace:*"
+    "@trezor/zod": "workspace:*"
   languageName: unknown
   linkType: soft
 
