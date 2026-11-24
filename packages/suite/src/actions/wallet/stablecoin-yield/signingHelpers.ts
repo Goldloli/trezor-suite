@@ -7,7 +7,7 @@ import {
     preserveModal,
     selectIsTransactionReviewActive,
 } from '@suite/modal';
-import { type DeviceRootState, selectSelectedDevice } from '@suite-common/device';
+import { type DeviceRootState, selectAccountSigningDevice } from '@suite-common/device';
 import {
     type StablecoinYieldTxSimulationParams,
     buildStablecoinYieldTransactionReview,
@@ -90,14 +90,6 @@ export const showYieldSubmitErrorThunk =
 export const getYieldSubmitErrorAnalyticsMessage = (error: unknown) =>
     isYieldPushError(error) ? 'push-failed' : 'submit-failed';
 
-export const isYieldSigningDevice = (
-    device: TrezorDevice | undefined,
-    account: Pick<Account, 'deviceState'>,
-): device is TrezorDevice =>
-    !!device?.connected &&
-    device.available &&
-    device.state?.staticSessionId === account.deviceState;
-
 type OpenYieldSimulationThunkState = DeviceRootState;
 
 export const openYieldSimulationThunk =
@@ -109,11 +101,14 @@ export const openYieldSimulationThunk =
         dispatch: ThunkDispatch<OpenYieldSimulationThunkState, unknown, UnknownAction>,
         getState: () => OpenYieldSimulationThunkState,
     ) => {
-        const device = selectSelectedDevice(getState());
+        const device = selectAccountSigningDevice(
+            getState(),
+            data.account.deviceState,
+            owner?.path,
+        );
         if (
             !owner?.path ||
-            !isYieldSigningDevice(device, data.account) ||
-            device.path !== owner.path ||
+            !device ||
             device.instance !== owner.instance ||
             !device.state?.staticSessionId ||
             device.state.staticSessionId !== owner.state?.staticSessionId
@@ -199,10 +194,10 @@ export const sendYieldTransaction = async ({
     selectedFee,
     selectedFeeLevel,
 }: SendYieldTransactionParams): Promise<SendYieldTransactionResult> => {
-    const device = selectSelectedDevice(getState());
+    const device = selectAccountSigningDevice(getState(), account.deviceState);
     const addressDisplayType = selectAddressDisplayType(getState());
 
-    if (!isYieldSigningDevice(device, account)) {
+    if (!device) {
         return { status: 'cancelled', stage: 'signing' };
     }
 

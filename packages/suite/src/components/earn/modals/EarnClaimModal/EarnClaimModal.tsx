@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { AssetSymbol } from '@suite/assets';
-import { setConnectionModal, setConnectionMode, useDevice } from '@suite/device';
+import { useDevice } from '@suite/device';
 import { Form } from '@suite/form';
 import { Translation } from '@suite/intl';
 import {
@@ -14,7 +14,6 @@ import { type Account } from '@suite-common/wallet-types';
 import { Banner, Card, Column, InfoItem, Modal, Paragraph, Row, Tooltip } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
 import { InfoIcon, WarningIcon } from '@trezor/icons';
-import { injectDispatch } from '@trezor/redux-utils';
 import { BigNumber } from '@trezor/utils';
 
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
@@ -41,7 +40,7 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
 
     const deviceStatus = useEarnDeviceStatus();
     const { device, isLocked } = useDevice();
-    const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
+    const { analytics } = useServices(injectDesktopAnalytics);
     const { isClaimingDisabled, claimingMessageContent } = useMessageSystemStaking(account.symbol);
 
     const {
@@ -49,6 +48,7 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
         changeFeeLevel,
         feeInfo,
         composedLevels,
+        selectedFee,
         watch,
         isComposing,
         handleSubmit,
@@ -67,13 +67,15 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
 
     const { claimableAmount = '0', restakedReward = '0' } = getStakingDataForNetwork(account) ?? {};
 
+    const isDeviceConnected = device?.connected && device?.available;
     const isFormInputsValid = !isCardanoNetworkType
         ? formIsValid && hasValues
-        : !isCardanoClaimingDisabled;
+        : !isDeviceConnected || !isCardanoClaimingDisabled;
 
-    const isDeviceConnected = device?.connected && device?.available;
-
-    const isDisabled = !isFormInputsValid || isSubmitting || (isDeviceConnected && isLocked());
+    const isDisabled =
+        !isFormInputsValid ||
+        isSubmitting ||
+        (isDeviceConnected && (isLocked() || composedLevels?.[selectedFee]?.type !== 'final'));
     const isDiscoveryRunning = useSelector(selectHasRunningDiscovery);
 
     // cardano specific logic
@@ -116,15 +118,6 @@ export const EarnClaimModal = ({ onCancel, account }: EarnClaimModalProps) => {
                 networkSymbol: account.symbol,
             },
         });
-
-        if (!isDeviceConnected) {
-            if (device?.descriptor?.apiType === 'bluetooth') {
-                dispatch(setConnectionMode('bluetooth'));
-            }
-            dispatch(setConnectionModal(true));
-
-            return;
-        }
 
         handleSubmit(signTx)();
     };

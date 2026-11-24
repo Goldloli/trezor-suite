@@ -33,7 +33,7 @@ export const TronClaimSubmitButton = () => {
 
     const hasReward = new BigNumber(getTronStakingRewards(account)).gt(0);
     const isDeviceLocked = !!device?.connected && !!device?.available && isLocked();
-    const isClaimFirmwareOutdated = !isTronClaimSupported(device);
+    const isClaimFirmwareOutdated = device?.connected && !isTronClaimSupported(device);
 
     const isDisabled =
         isClaimingDisabled || !hasReward || isSubmitting || isDeviceLocked || !!pendingTxid;
@@ -60,7 +60,7 @@ export const TronClaimSubmitButton = () => {
             },
         });
 
-        submitAction();
+        void submitAction(openFirmwareModal);
     };
 
     return (

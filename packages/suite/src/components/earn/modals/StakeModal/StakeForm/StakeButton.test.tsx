@@ -4,19 +4,17 @@ import { fireEvent, render } from '@testing-library/react';
 
 import { type DesktopAnalyticsDep } from '@suite/analytics';
 import { mockDesktopAnalytics } from '@suite/analytics/mocks';
-import { setConnectionModal } from '@suite/device';
 import { MODAL_CONTEXT_NONE } from '@suite/modal';
 import { EarnFlow } from '@suite-common/suite-types/src/staking';
 import { asNetworkSymbol, getNetwork } from '@suite-common/wallet-config';
 import { mockWalletAccount } from '@suite-common/wallet-types/mocks';
-import { ServicesProvider, mock } from '@trezor/dependency-injection';
-import { type Dispatch, type DispatchDep } from '@trezor/redux-utils';
+import { ServicesProvider } from '@trezor/dependency-injection';
 
 import { StakeButton } from './StakeButton';
 
 const mockReport = jest.fn();
-const mockDispatch = mock<Dispatch>();
 const mockSubmit = jest.fn();
+let mockHasFee = true;
 let mockDevice = { connected: true, available: true };
 
 jest.mock('@suite/device', () => ({
@@ -51,6 +49,8 @@ jest.mock('#src/hooks/earn/useStakeForm', () => ({
     useStakeFormContext: () => ({
         account: mockWalletAccount({ symbol: asNetworkSymbol('eth') }),
         network: getNetwork(asNetworkSymbol('eth')),
+        selectedFee: 'normal',
+        composedLevels: mockHasFee ? { normal: { type: 'final' } } : undefined,
         onSubmit: mockSubmit,
         handleSubmit: (callback: () => void) => callback,
         formState: { errors: {}, isSubmitting: false },
@@ -60,17 +60,34 @@ jest.mock('#src/hooks/earn/useStakeForm', () => ({
 }));
 
 describe('StakeButton device connection analytics', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockHasFee = true;
+    });
+
+    it.each([true, false])(
+        'allows recovery of a missing composition only when disconnected (connected=%s)',
+        connected => {
+            mockDevice = { connected, available: connected };
+            mockHasFee = false;
+            const { getByRole } = render(
+                <ServicesProvider services={{ analytics: mockDesktopAnalytics(mockReport) }}>
+                    <StakeButton flow={EarnFlow.Stake} />
+                </ServicesProvider>,
+            );
+            fireEvent.click(getByRole('button'));
+            expect(mockSubmit).toHaveBeenCalledTimes(connected ? 0 : 1);
+        },
+    );
 
     it.each([
         { connected: true, available: true, expectedStatus: 'connected' },
         { connected: false, available: false, expectedStatus: 'disconnected' },
         { connected: true, available: false, expectedStatus: 'unavailable' },
-    ])('reports one submit attempt before the connection guard ($connected/$available)', device => {
+    ])('continues to the terms and reports the device status ($connected/$available)', device => {
         mockDevice = device;
-        const services: DesktopAnalyticsDep & { store: DispatchDep } = {
+        const services: DesktopAnalyticsDep = {
             analytics: mockDesktopAnalytics(mockReport),
-            store: { dispatch: mockDispatch },
         };
         const { getByRole } = render(
             <ServicesProvider services={services}>
@@ -81,7 +98,6 @@ describe('StakeButton device connection analytics', () => {
         expect(mockReport).not.toHaveBeenCalled();
         fireEvent.click(getByRole('button'));
 
-        const isConnectionBlocked = !device.connected || !device.available;
         expect(mockReport).toHaveBeenCalledTimes(1);
         expect(mockReport).toHaveBeenCalledWith({
             type: 'staking/stake',
@@ -93,18 +109,6 @@ describe('StakeButton device connection analytics', () => {
                 deviceStatus: device.expectedStatus,
             },
         });
-        if (isConnectionBlocked) {
-            expect(mockDispatch).toHaveBeenCalledWith(setConnectionModal(true));
-            expect(mockSubmit).not.toHaveBeenCalled();
-            const [reportOrder] = mockReport.mock.invocationCallOrder;
-            const [dispatchOrder] = mockDispatch.mock.invocationCallOrder;
-            if (reportOrder === undefined || dispatchOrder === undefined) {
-                throw new Error('Missing analytics report or connection guard call');
-            }
-            expect(reportOrder).toBeLessThan(dispatchOrder);
-        } else {
-            expect(mockSubmit).toHaveBeenCalledTimes(1);
-            expect(mockDispatch).not.toHaveBeenCalled();
-        }
+        expect(mockSubmit).toHaveBeenCalledTimes(1);
     });
 });

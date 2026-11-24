@@ -1,7 +1,7 @@
 import { type DesktopAnalyticsDep } from '@suite/analytics';
 import { closeModal, openDeferredModal, preserveModal } from '@suite/modal';
 import { events } from '@suite-common/analytics';
-import { selectSelectedDevice } from '@suite-common/device';
+import { selectAccountSigningDevice, selectSelectedDevice } from '@suite-common/device';
 import {
     buildClaimCalldata,
     buildClaimTransactionReview,
@@ -32,7 +32,6 @@ import {
     PUSH_TRANSACTION_FAILED_CAUSE,
     type SendYieldTransactionState,
     getYieldSubmitErrorAnalyticsMessage,
-    isYieldSigningDevice,
     openYieldSimulationThunk,
     pushYieldTransaction,
     showYieldSubmitErrorThunk,
@@ -198,11 +197,12 @@ export const claimMerklRewardsThunk = createThunk<
                 return;
             }
 
-            const signingDevice = selectSelectedDevice(getState());
-            if (
-                !isYieldSigningDevice(signingDevice, account) ||
-                signingDevice.path !== device.path
-            ) {
+            const signingDevice = selectAccountSigningDevice(
+                getState(),
+                account.deviceState,
+                device.path,
+            );
+            if (!signingDevice) {
                 userAcceptedTxSimulation.resolve();
 
                 return null;

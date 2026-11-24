@@ -40,7 +40,7 @@ export const TronVotingRewardsCard = ({ account }: TronVotingRewardsCardProps) =
 
     const rewards = getTronStakingRewards(account);
     const { isClaimOnCooldown, claimCooldownEndsAt } = useTronRewardsClaimCoolDown(account);
-    const isClaimFirmwareOutdated = !isTronClaimSupported(device);
+    const isClaimFirmwareOutdated = device?.connected && !isTronClaimSupported(device);
 
     const { isClaimingDisabled, claimingMessageContent } = useMessageSystemStaking(account.symbol);
 
