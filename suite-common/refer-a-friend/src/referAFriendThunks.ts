@@ -288,6 +288,8 @@ export const fetchReferralProgramThunk = createThunk<
     const programResult = referralProgramSchema.safeParse(result.payload);
 
     if (!programResult.success) {
+        // Program data is public, nothing sensitive, we can dump it to Sentry as is.
+        console.error('Referral API: invalid GET v1/program response', result.payload);
         dispatch(referAFriendActions.programFailed({ message: 'Invalid program response' }));
 
         return;
