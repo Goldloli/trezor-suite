@@ -6,7 +6,7 @@ import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { HomeBalanceChange } from './HomeBalanceChange';
-import { HomeTotalBalance } from './HomeTotalBalance';
+import { TotalBalanceHeadline } from './TotalBalanceHeadline';
 
 export const HomeBalanceCard = () => {
     const { isDiscoveryRunning } = useDiscovery();
@@ -22,7 +22,10 @@ export const HomeBalanceCard = () => {
                     <Skeleton width={180} height={56} />
                 ) : (
                     <>
-                        <HomeTotalBalance fiatValue={fiatValue} />
+                        <TotalBalanceHeadline
+                            fiatValue={fiatValue}
+                            data-testid="@dashboard/home-asset/fiat-amount"
+                        />
                         {weekChange !== undefined && (
                             <HomeBalanceChange
                                 period={<Translation id="TR_HOME_ASSET_WEEK_PERIOD" />}

@@ -14,8 +14,7 @@ import { BigNumber } from '@trezor/utils';
 
 import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
-
-import { EarnTotalBalance } from './EarnTotalBalance';
+import { TotalBalanceHeadline } from '#src/views/home/HomeBalance/TotalBalanceHeadline';
 
 type EarnBalanceCardWrapperProps = {
     children?: ReactNode;
@@ -82,7 +81,11 @@ export const EarnBalanceCard = () => {
 
     return (
         <EarnBalanceCardWrapper positionsCount={earnPositionsCount}>
-            <EarnTotalBalance fiatValue={fiatValue} isIncomplete={isFiatTotalIncomplete} />
+            <TotalBalanceHeadline
+                fiatValue={fiatValue}
+                isApproximate={isFiatTotalIncomplete}
+                fallback={<Translation id="TR_EARN_N_A" />}
+            />
         </EarnBalanceCardWrapper>
     );
 };

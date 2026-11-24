@@ -12,7 +12,7 @@ import { Box, Card, Column, Row, Skeleton, Text } from '@trezor/components';
 import { NoRatesTooltip } from '#src/components/suite/Ticker/NoRatesTooltip';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { useAccountHeaderContext } from '#src/support/suite/AccountHeaderProvider';
-import { HomeTotalBalance } from '#src/views/home/HomeBalance/HomeTotalBalance';
+import { TotalBalanceHeadline } from '#src/views/home/HomeBalance/TotalBalanceHeadline';
 
 /** The line height of the total headline, so its placeholders keep the card from jumping. */
 const TOTAL_HEIGHT = 56;
@@ -52,7 +52,7 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
                     </Row>
                     <Column ref={balanceSectionRef} alignItems="flex-start">
                         {fiatValue !== undefined && (
-                            <HomeTotalBalance
+                            <TotalBalanceHeadline
                                 fiatValue={fiatValue}
                                 isApproximate={isIncomplete}
                                 data-testid="@wallet/account-assets/fiat-amount"

@@ -7,18 +7,15 @@ import { BigNumber } from '@trezor/utils';
 
 import { renderWithProviders } from '#src/support/test-utils/hooksHelper';
 
-import { EarnTotalBalance } from './EarnTotalBalance';
-import {
-    type MockSuiteState,
-    mockInitialAppState,
-} from '../../../../../../mocks/mockInitialAppState';
+import { TotalBalanceHeadline } from './TotalBalanceHeadline';
+import { type MockSuiteState, mockInitialAppState } from '../../../../mocks/mockInitialAppState';
 
 type RenderParams = {
     language: MockSuiteState['suiteSettings']['language'];
-    isIncomplete?: boolean;
+    isApproximate?: boolean;
 };
 
-const renderTotal = ({ language, isIncomplete }: RenderParams) => {
+const renderTotal = ({ language, isApproximate }: RenderParams) => {
     const { services } = createTestCompositionRoot<void, MockSuiteState>({
         preloadedState: {
             ...mockInitialAppState,
@@ -28,17 +25,17 @@ const renderTotal = ({ language, isIncomplete }: RenderParams) => {
 
     renderWithProviders(
         services,
-        <EarnTotalBalance
+        <TotalBalanceHeadline
             fiatValue={new BigNumber('1234.5')}
-            isIncomplete={isIncomplete}
-            dataTestId="@total"
+            isApproximate={isApproximate}
+            data-testid="@total"
         />,
     );
 
     return screen.getByTestId('@total').textContent;
 };
 
-describe(EarnTotalBalance.name, () => {
+describe(TotalBalanceHeadline.name, () => {
     it.each<{ description: string; params: RenderParams; expected: string }>([
         {
             description: 'writes the symbol right before the amount where the locale does',
@@ -53,7 +50,7 @@ describe(EarnTotalBalance.name, () => {
         },
         {
             description: 'marks a total that leaves something out as approximate',
-            params: { language: 'en-US', isIncomplete: true },
+            params: { language: 'en-US', isApproximate: true },
             expected: '≈$1,234.50',
         },
     ])('$description', ({ params, expected }) => {
