@@ -9,15 +9,15 @@ import { Column, Row, TOOLTIP_DELAY_LONG, Text, TruncateWithTooltip } from '@tre
 
 import { useSelector } from '#src/hooks/suite/useSelector';
 
-import { HOME_ASSET_LINE_GAP } from './homeAssetTableLayout';
+import { ASSET_TABLE_LINE_GAP } from './assetTableLayout';
 
-type HomeAssetIdentityProps = {
+type AssetIdentityProps = {
     symbol: NetworkSymbol;
     contractAddress: TokenAddress | undefined;
     badge?: ReactNode;
 };
 
-export const HomeAssetIdentity = ({ symbol, contractAddress, badge }: HomeAssetIdentityProps) => {
+export const AssetIdentity = ({ symbol, contractAddress, badge }: AssetIdentityProps) => {
     const { NetworkNameFormatter } = useFormatters();
     const isIconFetchable = useSelector(
         state =>
@@ -34,7 +34,7 @@ export const HomeAssetIdentity = ({ symbol, contractAddress, badge }: HomeAssetI
                 showNetworkIcon
                 shouldTryToFetch={isIconFetchable}
             />
-            <Column alignItems="flex-start" gap={HOME_ASSET_LINE_GAP} flex="1" minWidth={0}>
+            <Column alignItems="flex-start" gap={ASSET_TABLE_LINE_GAP} flex="1" minWidth={0}>
                 <Row gap={8} maxWidth="100%">
                     <Text
                         typographyStyle="body-md"

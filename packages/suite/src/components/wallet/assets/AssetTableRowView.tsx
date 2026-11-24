@@ -7,10 +7,10 @@ import { Column, Table } from '@trezor/components';
 import { PriceTicker } from '#src/components/suite/Ticker/PriceTicker';
 import { TrendTicker } from '#src/components/suite/Ticker/TrendTicker';
 
-import { HomeAssetAmount } from './HomeAssetAmount';
-import { HomeAssetApyBadge } from './HomeAssetApyBadge';
-import { HomeAssetIdentity } from './HomeAssetIdentity';
-import { HOME_ASSET_CELL_PADDING, HOME_ASSET_LINE_GAP } from './homeAssetTableLayout';
+import { AssetApyBadge } from './AssetApyBadge';
+import { AssetIdentity } from './AssetIdentity';
+import { AssetTableAmount } from './AssetTableAmount';
+import { ASSET_TABLE_CELL_PADDING, ASSET_TABLE_LINE_GAP } from './assetTableLayout';
 
 type AssetTableRowViewProps = {
     networkSymbol: NetworkSymbol;
@@ -40,13 +40,13 @@ export const AssetTableRowView = ({
     'data-testid': dataTestId,
 }: AssetTableRowViewProps) => (
     <Table.Row hasBorderTop={hasBorderTop} onClick={onOpen} data-testid={dataTestId}>
-        <Table.Cell padding={HOME_ASSET_CELL_PADDING.first} data-testid={assetNameTestId}>
-            <HomeAssetIdentity
+        <Table.Cell padding={ASSET_TABLE_CELL_PADDING.first} data-testid={assetNameTestId}>
+            <AssetIdentity
                 symbol={networkSymbol}
                 contractAddress={contractAddress}
                 badge={
                     badge ?? (
-                        <HomeAssetApyBadge
+                        <AssetApyBadge
                             symbol={networkSymbol}
                             contractAddress={contractAddress}
                             tokenSymbol={tokenSymbol}
@@ -58,15 +58,15 @@ export const AssetTableRowView = ({
         </Table.Cell>
 
         <Table.Cell align="end">
-            <Column alignItems="flex-end" gap={HOME_ASSET_LINE_GAP}>
+            <Column alignItems="flex-end" gap={ASSET_TABLE_LINE_GAP}>
                 <PriceTicker symbol={networkSymbol} contractAddress={contractAddress} />
                 <TrendTicker symbol={networkSymbol} contractAddress={contractAddress} />
             </Column>
         </Table.Cell>
 
-        <Table.Cell align="end" padding={HOME_ASSET_CELL_PADDING.last}>
+        <Table.Cell align="end" padding={ASSET_TABLE_CELL_PADDING.last}>
             {amount !== undefined && (
-                <HomeAssetAmount
+                <AssetTableAmount
                     symbol={networkSymbol}
                     contractAddress={contractAddress}
                     amount={amount}

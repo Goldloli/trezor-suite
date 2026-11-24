@@ -5,9 +5,8 @@ import {
 } from '@suite-common/assets';
 import { type WalletAssetKey } from '@suite-common/wallet-core';
 
+import { AssetTableAmount } from '#src/components/wallet/assets/AssetTableAmount';
 import { useSelector } from '#src/hooks/suite/useSelector';
-
-import { HomeAssetAmount } from './HomeAssetAmount';
 
 type HomeAssetBalanceContainerProps = {
     assetKey: WalletAssetKey;
@@ -31,6 +30,10 @@ export const HomeAssetBalanceContainer = ({
     }
 
     return (
-        <HomeAssetAmount symbol={networkSymbol} contractAddress={contractAddress} amount={amount} />
+        <AssetTableAmount
+            symbol={networkSymbol}
+            contractAddress={contractAddress}
+            amount={amount}
+        />
     );
 };

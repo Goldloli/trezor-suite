@@ -3,10 +3,10 @@ import { selectAccountAssetOverview, selectAccountFiatBalance } from '@suite-com
 import { type AccountKey } from '@suite-common/wallet-types';
 import { Box, Column } from '@trezor/components';
 
+import { TotalBalanceCard } from '#src/components/wallet/assets/TotalBalanceCard';
+import { TotalBalanceHeadline } from '#src/components/wallet/assets/TotalBalanceHeadline';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { useAccountHeaderContext } from '#src/support/suite/AccountHeaderProvider';
-import { TotalBalanceCard } from '#src/views/home/HomeBalance/TotalBalanceCard';
-import { TotalBalanceHeadline } from '#src/views/home/HomeBalance/TotalBalanceHeadline';
 
 type AccountAssetBalanceProps = {
     accountKey: AccountKey;

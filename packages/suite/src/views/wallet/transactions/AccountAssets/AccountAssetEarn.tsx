@@ -8,10 +8,10 @@ import { isSupportedStakingNetworkSymbol, selectAccountByKey } from '@suite-comm
 import { type AccountKey } from '@suite-common/wallet-types';
 import { isPositiveBalance } from '@suite-common/wallet-utils';
 
+import { StakingSplitCard } from '#src/components/wallet/assets/StakingSplitCard';
 import { useOpenAccountStaking } from '#src/components/wallet/assets/useOpenAccountStaking';
 import { useStakingRate } from '#src/hooks/earn/useStakingRate';
 import { useSelector } from '#src/hooks/suite/useSelector';
-import { AssetDetailEarnCard } from '#src/views/home/AssetDetail/AssetDetailEarnCard';
 
 type AccountAssetEarnProps = {
     accountKey: AccountKey;
@@ -44,7 +44,7 @@ export const AccountAssetEarn = ({ accountKey }: AccountAssetEarnProps) => {
     }
 
     return (
-        <AssetDetailEarnCard
+        <StakingSplitCard
             networkSymbol={networkSymbol}
             availableAmount={availableAmount}
             stakingAmount={stakingAmount}

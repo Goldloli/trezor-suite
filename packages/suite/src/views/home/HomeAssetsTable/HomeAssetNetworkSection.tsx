@@ -12,10 +12,10 @@ import { asBaseCurrencyAmount } from '@suite-common/wallet-types';
 import { Table, Text } from '@trezor/components';
 import { BigNumber } from '@trezor/utils';
 
+import { ASSET_TABLE_CELL_PADDING } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { HomeAssetRowContainer } from './HomeAssetRowContainer';
-import { HOME_ASSET_CELL_PADDING } from './homeAssetTableLayout';
 
 type HomeAssetNetworkSectionProps = {
     symbol: NetworkSymbol;
@@ -37,12 +37,12 @@ export const HomeAssetNetworkSection = memo(
                     isHighlightedOnHover={false}
                     data-testid={`@dashboard/home-asset-group/${symbol}`}
                 >
-                    <Table.Cell colSpan={2} padding={HOME_ASSET_CELL_PADDING.first}>
+                    <Table.Cell colSpan={2} padding={ASSET_TABLE_CELL_PADDING.first}>
                         <Text typographyStyle="body-sm" intent="neutral" priority="secondary">
                             {name ?? symbol.toUpperCase()}
                         </Text>
                     </Table.Cell>
-                    <Table.Cell align="end" padding={HOME_ASSET_CELL_PADDING.last}>
+                    <Table.Cell align="end" padding={ASSET_TABLE_CELL_PADDING.last}>
                         {fiatValue !== undefined && (
                             <Text typographyStyle="body-sm" intent="neutral" priority="secondary">
                                 <HiddenPlaceholder>

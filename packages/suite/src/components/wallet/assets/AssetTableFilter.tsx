@@ -19,9 +19,9 @@ import { CaretRightIcon, CheckIcon, FunnelSimpleIcon } from '@trezor/icons';
 
 import { useSelector } from '#src/hooks/suite/useSelector';
 
-import { HomeAssetSmallBalancesLabel } from './HomeAssetSmallBalancesLabel';
+import { AssetTableSmallBalancesLabel } from './AssetTableSmallBalancesLabel';
 
-type HomeAssetTableFilterProps = {
+type AssetTableFilterProps = {
     /** Left out where the rows are one network's, as an account's are: there is nothing to group. */
     grouping?: HomeAssetGrouping;
     areSmallBalancesShown: boolean;
@@ -31,14 +31,14 @@ type HomeAssetTableFilterProps = {
     onOpenHiddenTokens: () => void;
 };
 
-const HomeAssetTableFilter = ({
+const AssetTableFilter = ({
     grouping,
     areSmallBalancesShown,
     smallBalances,
     onGroupingChange,
     onSmallBalancesChange,
     onOpenHiddenTokens,
-}: HomeAssetTableFilterProps) => {
+}: AssetTableFilterProps) => {
     const popoverRef = useRef<PopoverRef>(null);
 
     const choose = (chosen: HomeAssetGrouping) => {
@@ -69,7 +69,7 @@ const HomeAssetTableFilter = ({
                             'data-testid': '@dashboard/home-asset/grouping/networks',
                         },
                         {
-                            label: <HomeAssetSmallBalancesLabel smallBalances={smallBalances} />,
+                            label: <AssetTableSmallBalancesLabel smallBalances={smallBalances} />,
                             rightContent: (
                                 <Row pointerEvents="none">
                                     <Switch
@@ -112,13 +112,13 @@ const HomeAssetTableFilter = ({
     );
 };
 
-export const HomeAssetTableFilterHeader = (props: HomeAssetTableFilterProps) => {
+export const AssetTableFilterHeader = (props: AssetTableFilterProps) => {
     const isMenuAvailable = useSelector(selectIsHomeAssetTableMenuAvailable);
 
     return (
         <Row gap={8} alignItems="center">
             <Translation id="TR_ASSET" />
-            {isMenuAvailable && <HomeAssetTableFilter {...props} />}
+            {isMenuAvailable && <AssetTableFilter {...props} />}
         </Row>
     );
 };

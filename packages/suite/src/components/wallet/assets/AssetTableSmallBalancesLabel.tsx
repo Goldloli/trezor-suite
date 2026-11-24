@@ -4,13 +4,13 @@ import { useFormatters } from '@suite-common/formatters';
 import { asBaseCurrencyAmount } from '@suite-common/wallet-types';
 import { Column, Text } from '@trezor/components';
 
-type HomeAssetSmallBalancesLabelProps = {
+type AssetTableSmallBalancesLabelProps = {
     smallBalances: SmallBalanceSummary | undefined;
 };
 
-export const HomeAssetSmallBalancesLabel = ({
+export const AssetTableSmallBalancesLabel = ({
     smallBalances,
-}: HomeAssetSmallBalancesLabelProps) => {
+}: AssetTableSmallBalancesLabelProps) => {
     const { BaseCurrencyAmountFormatter } = useFormatters();
 
     return (

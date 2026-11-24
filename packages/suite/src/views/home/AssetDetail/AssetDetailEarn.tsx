@@ -13,10 +13,9 @@ import { isPositiveBalance } from '@suite-common/wallet-utils';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
+import { StakingSplitCard } from '#src/components/wallet/assets/StakingSplitCard';
 import { useStakingRate } from '#src/hooks/earn/useStakingRate';
 import { useSelector } from '#src/hooks/suite/useSelector';
-
-import { AssetDetailEarnCard } from './AssetDetailEarnCard';
 
 type AssetDetailEarnProps = {
     assetKey: WalletAssetKey;
@@ -45,7 +44,7 @@ export const AssetDetailEarn = ({ assetKey }: AssetDetailEarnProps) => {
     }
 
     return (
-        <AssetDetailEarnCard
+        <StakingSplitCard
             networkSymbol={networkSymbol}
             availableAmount={availableAmount}
             stakingAmount={stakingAmount}

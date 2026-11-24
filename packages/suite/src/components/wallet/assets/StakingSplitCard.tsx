@@ -7,13 +7,13 @@ import { type Color } from '@trezor/theme';
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
 import { useFormatApy } from '#src/hooks/earn/useFormatApy';
 
-import { AssetDetailEarnLegendSquare } from './AssetDetailEarnLegendSquare';
+import { StakingSplitLegendSquare } from './StakingSplitLegendSquare';
 
 const AVAILABLE_COLOR = 'elementFillAccentVioletBold' satisfies Color;
 const UNSTAKED_COLOR = 'elementFillNeutralSoft' satisfies Color;
 const STAKING_COLOR = 'elementFillBrandBold' satisfies Color;
 
-type AssetDetailEarnCardProps = {
+type StakingSplitCardProps = {
     networkSymbol: NetworkSymbol;
     availableAmount: string;
     stakingAmount: string;
@@ -25,7 +25,7 @@ type AssetDetailEarnCardProps = {
 };
 
 /** A coin split into what is staked and what is not, with the rate the stake earns. */
-export const AssetDetailEarnCard = ({
+export const StakingSplitCard = ({
     networkSymbol,
     availableAmount,
     stakingAmount,
@@ -33,7 +33,7 @@ export const AssetDetailEarnCard = ({
     apy,
     onViewAll,
     'data-testid': dataTestId,
-}: AssetDetailEarnCardProps) => {
+}: StakingSplitCardProps) => {
     const formatApy = useFormatApy();
 
     // A Cardano delegation leaves the whole balance spendable, so the rest is unstaked, not the
@@ -67,7 +67,7 @@ export const AssetDetailEarnCard = ({
                         />
                         <Row justifyContent="space-between" alignItems="center">
                             <Row gap={12} alignItems="center">
-                                <AssetDetailEarnLegendSquare color={unstakedColor} />
+                                <StakingSplitLegendSquare color={unstakedColor} />
                                 <Text
                                     typographyStyle="body-sm"
                                     intent="neutral"
@@ -91,7 +91,7 @@ export const AssetDetailEarnCard = ({
                         </Row>
                         <Row justifyContent="space-between" alignItems="center">
                             <Row gap={12} alignItems="center">
-                                <AssetDetailEarnLegendSquare color={STAKING_COLOR} />
+                                <StakingSplitLegendSquare color={STAKING_COLOR} />
                                 <Text
                                     typographyStyle="body-sm"
                                     intent="neutral"

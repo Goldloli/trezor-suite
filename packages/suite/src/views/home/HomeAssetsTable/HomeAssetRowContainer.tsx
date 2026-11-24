@@ -7,10 +7,9 @@ import {
 } from '@suite-common/assets';
 import { type WalletAssetKey } from '@suite-common/wallet-core';
 
+import { AssetTableRowView } from '#src/components/wallet/assets/AssetTableRowView';
 import { useOpenAsset } from '#src/components/wallet/assets/useOpenAsset';
 import { useSelector } from '#src/hooks/suite/useSelector';
-
-import { AssetTableRowView } from './AssetTableRowView';
 
 type HomeAssetRowContainerProps = {
     assetKey: WalletAssetKey;

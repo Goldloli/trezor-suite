@@ -14,10 +14,10 @@ import { typographyStylesBase } from '@trezor/theme';
 
 import { PriceTicker } from '#src/components/suite/Ticker/PriceTicker';
 import { TrendTicker } from '#src/components/suite/Ticker/TrendTicker';
+import { AssetIdentity } from '#src/components/wallet/assets/AssetIdentity';
+import { ASSET_TABLE_LINE_GAP } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { HomeAssetBalanceContainer } from '#src/views/home/HomeAssetsTable/HomeAssetBalanceContainer';
-import { HomeAssetIdentity } from '#src/views/home/HomeAssetsTable/HomeAssetIdentity';
-import { HOME_ASSET_LINE_GAP } from '#src/views/home/HomeAssetsTable/homeAssetTableLayout';
 
 export const HIDDEN_TOKEN_ROW_PADDING = { vertical: 12, horizontal: 20 } satisfies Padding;
 
@@ -25,7 +25,7 @@ export const HIDDEN_TOKEN_ROW_PADDING = { vertical: 12, horizontal: 20 } satisfi
 export const HIDDEN_TOKEN_ROW_HEIGHT =
     HIDDEN_TOKEN_ROW_PADDING.vertical * 2 +
     typographyStylesBase['body-md'].lineHeight +
-    HOME_ASSET_LINE_GAP +
+    ASSET_TABLE_LINE_GAP +
     typographyStylesBase['body-sm'].lineHeight;
 
 export const HIDDEN_TOKEN_PRICE_WIDTH = 140;
@@ -81,12 +81,12 @@ export const HiddenTokenRow = memo(function HiddenTokenRow({
         >
             <Row gap={16} padding={HIDDEN_TOKEN_ROW_PADDING}>
                 <Row flex="1" minWidth={0}>
-                    <HomeAssetIdentity symbol={networkSymbol} contractAddress={contractAddress} />
+                    <AssetIdentity symbol={networkSymbol} contractAddress={contractAddress} />
                 </Row>
                 <Column
                     width={HIDDEN_TOKEN_PRICE_WIDTH}
                     alignItems="flex-end"
-                    gap={HOME_ASSET_LINE_GAP}
+                    gap={ASSET_TABLE_LINE_GAP}
                 >
                     <PriceTicker symbol={networkSymbol} contractAddress={contractAddress} />
                     <TrendTicker symbol={networkSymbol} contractAddress={contractAddress} />

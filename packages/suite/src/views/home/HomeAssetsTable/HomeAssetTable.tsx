@@ -22,18 +22,18 @@ import { type HomeAssetsTableGrouping } from '@suite-common/wallet-types';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
+import { AssetTableExpandRow } from '#src/components/wallet/assets/AssetTableExpandRow';
+import { AssetTableFilterHeader } from '#src/components/wallet/assets/AssetTableFilter';
 import { AssetTableFrame } from '#src/components/wallet/assets/AssetTableFrame';
+import { AssetTableSmallBalancesHiddenRow } from '#src/components/wallet/assets/AssetTableSmallBalancesHiddenRow';
 import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { AssetRowsSkeleton } from './AssetRowsSkeleton';
-import { HomeAssetExpandRow } from './HomeAssetExpandRow';
 import { HomeAssetNetworkSection } from './HomeAssetNetworkSection';
 import { HomeAssetNewBanner } from './HomeAssetNewBanner';
 import { HomeAssetRowContainer } from './HomeAssetRowContainer';
-import { HomeAssetSmallBalancesHiddenRow } from './HomeAssetSmallBalancesHiddenRow';
 import { HomeAssetTableEmptyState } from './HomeAssetTableEmptyState';
-import { HomeAssetTableFilterHeader } from './HomeAssetTableFilter';
 
 const NO_NETWORKS: readonly NetworkSymbol[] = [];
 
@@ -108,7 +108,7 @@ export const HomeAssetTable = () => {
         <AssetTableFrame
             banner={<HomeAssetNewBanner />}
             assetHeader={
-                <HomeAssetTableFilterHeader
+                <AssetTableFilterHeader
                     grouping={grouping}
                     areSmallBalancesShown={areSmallBalancesShown}
                     smallBalances={smallBalances}
@@ -121,7 +121,7 @@ export const HomeAssetTable = () => {
         >
             {!hasAssets && <HomeAssetTableEmptyState />}
             {hasAssets && assetKeys.length === 0 && (
-                <HomeAssetSmallBalancesHiddenRow
+                <AssetTableSmallBalancesHiddenRow
                     onShowSmallBalances={() => changeSmallBalances(true)}
                 />
             )}
@@ -133,7 +133,7 @@ export const HomeAssetTable = () => {
                       <HomeAssetRowContainer key={assetKey} assetKey={assetKey} />
                   ))}
             {isFoldable && (
-                <HomeAssetExpandRow
+                <AssetTableExpandRow
                     isExpanded={isExpanded}
                     onToggle={() => {
                         analytics.report({

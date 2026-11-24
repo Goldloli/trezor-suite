@@ -1,8 +1,8 @@
 import { type TokenAddress, type TokenSymbol } from '@suite-common/tokens';
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 
+import { AssetTableRowView } from '#src/components/wallet/assets/AssetTableRowView';
 import { useOpenAsset } from '#src/components/wallet/assets/useOpenAsset';
-import { AssetTableRowView } from '#src/views/home/HomeAssetsTable/AssetTableRowView';
 
 type AccountAssetRowProps = {
     networkSymbol: NetworkSymbol;

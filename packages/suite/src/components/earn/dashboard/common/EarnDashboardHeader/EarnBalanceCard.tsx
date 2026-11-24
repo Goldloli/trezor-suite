@@ -10,10 +10,10 @@ import { useYieldOpportunities } from '@suite-common/wallet-core';
 import { Text } from '@trezor/components';
 import { BigNumber } from '@trezor/utils';
 
+import { TotalBalanceCard } from '#src/components/wallet/assets/TotalBalanceCard';
+import { TotalBalanceHeadline } from '#src/components/wallet/assets/TotalBalanceHeadline';
 import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
-import { TotalBalanceCard } from '#src/views/home/HomeBalance/TotalBalanceCard';
-import { TotalBalanceHeadline } from '#src/views/home/HomeBalance/TotalBalanceHeadline';
 
 export const EarnBalanceCard = () => {
     const { isDiscoveryRunning } = useDiscovery();

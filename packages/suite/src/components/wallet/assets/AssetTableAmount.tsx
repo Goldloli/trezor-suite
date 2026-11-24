@@ -6,24 +6,24 @@ import { TruncatedAmount } from '#src/components/earn/yield/common/TruncatedAmou
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
 import { FormattedCryptoAmount } from '#src/components/suite/FormattedCryptoAmount';
 
-import { HOME_ASSET_BALANCE_MAX_WIDTH, HOME_ASSET_LINE_GAP } from './homeAssetTableLayout';
+import { ASSET_TABLE_BALANCE_MAX_WIDTH, ASSET_TABLE_LINE_GAP } from './assetTableLayout';
 
-type HomeAssetAmountProps = {
+type AssetTableAmountProps = {
     symbol: NetworkSymbol;
     contractAddress: TokenAddress | undefined;
     amount: string;
 };
 
 /** An amount as an asset table's balance column shows it: in fiat, and below it in the asset. */
-export const HomeAssetAmount = ({ symbol, contractAddress, amount }: HomeAssetAmountProps) => (
-    <Column alignItems="flex-end" gap={HOME_ASSET_LINE_GAP}>
+export const AssetTableAmount = ({ symbol, contractAddress, amount }: AssetTableAmountProps) => (
+    <Column alignItems="flex-end" gap={ASSET_TABLE_LINE_GAP}>
         <BaseCurrencyValue amount={amount} symbol={symbol} tokenAddress={contractAddress} />
         <Text
             intent="neutral"
             priority="secondary"
             typographyStyle="body-sm"
             ellipsisLineCount={1}
-            maxWidth={HOME_ASSET_BALANCE_MAX_WIDTH}
+            maxWidth={ASSET_TABLE_BALANCE_MAX_WIDTH}
         >
             <TruncatedAmount>
                 <FormattedCryptoAmount

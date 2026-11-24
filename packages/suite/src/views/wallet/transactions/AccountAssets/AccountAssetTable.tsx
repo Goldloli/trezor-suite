@@ -16,12 +16,12 @@ import { Table } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
+import { AssetTableExpandRow } from '#src/components/wallet/assets/AssetTableExpandRow';
+import { AssetTableFilterHeader } from '#src/components/wallet/assets/AssetTableFilter';
 import { AssetTableFrame } from '#src/components/wallet/assets/AssetTableFrame';
+import { AssetTableSmallBalancesHiddenRow } from '#src/components/wallet/assets/AssetTableSmallBalancesHiddenRow';
+import { ASSET_TABLE_CELL_PADDING } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
-import { HomeAssetExpandRow } from '#src/views/home/HomeAssetsTable/HomeAssetExpandRow';
-import { HomeAssetSmallBalancesHiddenRow } from '#src/views/home/HomeAssetsTable/HomeAssetSmallBalancesHiddenRow';
-import { HomeAssetTableFilterHeader } from '#src/views/home/HomeAssetsTable/HomeAssetTableFilter';
-import { HOME_ASSET_CELL_PADDING } from '#src/views/home/HomeAssetsTable/homeAssetTableLayout';
 import { DropdownRow } from '#src/views/wallet/tokens/DropdownRow';
 
 import { AccountAssetSectionRow } from './AccountAssetSectionRow';
@@ -76,7 +76,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
     return (
         <AssetTableFrame
             assetHeader={
-                <HomeAssetTableFilterHeader
+                <AssetTableFilterHeader
                     areSmallBalancesShown={areSmallBalancesShown}
                     smallBalances={smallBalances.summary}
                     onSmallBalancesChange={changeSmallBalances}
@@ -86,7 +86,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
             data-testid="@wallet/account-assets/table"
         >
             {rows.length === 0 && heldSections.length > 0 && (
-                <HomeAssetSmallBalancesHiddenRow
+                <AssetTableSmallBalancesHiddenRow
                     onShowSmallBalances={() => changeSmallBalances(true)}
                 />
             )}
@@ -94,7 +94,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                 <AccountAssetSectionRow key={getAccountListSectionKey(section)} section={section} />
             ))}
             {isFoldable && (
-                <HomeAssetExpandRow
+                <AssetTableExpandRow
                     isExpanded={isExpanded}
                     onToggle={() => setIsExpanded(!isExpanded)}
                 />
@@ -104,7 +104,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                     onClick={() => setIsZeroBalanceOpen(!isZeroBalanceOpen)}
                     data-testid="@wallet/account-assets/zero-balance"
                 >
-                    <Table.Cell colSpan={3} padding={HOME_ASSET_CELL_PADDING.first}>
+                    <Table.Cell colSpan={3} padding={ASSET_TABLE_CELL_PADDING.first}>
                         <DropdownRow
                             isActive={isZeroBalanceOpen}
                             text="ZERO_BALANCE_TOKENS"

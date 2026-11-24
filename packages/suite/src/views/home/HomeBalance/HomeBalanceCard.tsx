@@ -1,12 +1,12 @@
 import { Translation } from '@suite/intl';
 import { selectHomeAssetTotals } from '@suite-common/assets';
 
+import { TotalBalanceCard } from '#src/components/wallet/assets/TotalBalanceCard';
+import { TotalBalanceHeadline } from '#src/components/wallet/assets/TotalBalanceHeadline';
 import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { HomeBalanceChange } from './HomeBalanceChange';
-import { TotalBalanceCard } from './TotalBalanceCard';
-import { TotalBalanceHeadline } from './TotalBalanceHeadline';
 
 export const HomeBalanceCard = () => {
     const { isDiscoveryRunning } = useDiscovery();

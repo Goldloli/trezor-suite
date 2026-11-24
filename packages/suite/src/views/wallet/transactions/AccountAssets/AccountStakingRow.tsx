@@ -2,8 +2,8 @@ import { Translation } from '@suite/intl';
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { Badge } from '@trezor/components';
 
+import { AssetTableRowView } from '#src/components/wallet/assets/AssetTableRowView';
 import { useOpenAccountStaking } from '#src/components/wallet/assets/useOpenAccountStaking';
-import { AssetTableRowView } from '#src/views/home/HomeAssetsTable/AssetTableRowView';
 
 type AccountStakingRowProps = {
     networkSymbol: NetworkSymbol;
