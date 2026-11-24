@@ -316,6 +316,18 @@ const selectUsdToBaseCurrencyRate = createMemoizedSelector(
 );
 
 /**
+ * What a small balance is worth at most, in the selected currency: a dollar. Unknown until the USD
+ * rate is, so that nothing is called small by mistake.
+ */
+export const selectSmallBalanceFiatThreshold = createMemoizedSelector(
+    [selectUsdToBaseCurrencyRate],
+    (usdToBaseCurrencyRate): string | undefined =>
+        usdToBaseCurrencyRate === undefined
+            ? undefined
+            : SMALL_BALANCE_USD_VALUE.times(usdToBaseCurrencyRate).toFixed(),
+);
+
+/**
  * Assets worth under $1 in the selected currency. An unpriced asset is never small, and nothing is
  * small until the USD rate is known, so nothing is hidden by mistake.
  */

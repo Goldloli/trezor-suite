@@ -6,19 +6,24 @@ import { gotoThunk } from '@suite/router';
 import {
     type AccountListSection,
     HOME_ASSET_ROW_LIMIT,
+    getAccountListSectionKey,
     getHomeAssetRowLimit,
     selectAccountListSectionsWithVaultTokens,
+    selectAccountSmallBalances,
+    selectAreHomeAssetSmallBalancesDisplayed,
 } from '@suite-common/assets';
 import { type TokenInfoBranded } from '@suite-common/tokens';
+import { setAreHomeAssetSmallBalancesShown } from '@suite-common/wallet-core';
 import { type Account, type AccountKey } from '@suite-common/wallet-types';
 import { isPositiveBalance } from '@suite-common/wallet-utils';
-import { Card, Row, Table, TextButton } from '@trezor/components';
+import { Card, Table } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
-import { CaretRightIcon } from '@trezor/icons';
 import { injectDispatch } from '@trezor/redux-utils';
 
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { HomeAssetExpandRow } from '#src/views/home/HomeAssetsTable/HomeAssetExpandRow';
+import { HomeAssetSmallBalancesHiddenRow } from '#src/views/home/HomeAssetsTable/HomeAssetSmallBalancesHiddenRow';
+import { HomeAssetTableFilterHeader } from '#src/views/home/HomeAssetsTable/HomeAssetTableFilter';
 import {
     HOME_ASSET_CELL_PADDING,
     HOME_ASSET_COL_WIDTHS,
@@ -77,7 +82,8 @@ type AccountAssetTableProps = {
 
 /**
  * What one account holds, as the mobile account overview lists it: its coin, its stake on a row
- * of its own, its tokens by value, and the tokens it holds none of in a group that opens.
+ * of its own, its tokens by value, and the tokens it holds none of in a group that opens. The
+ * menu is the Home table's, without the grouping: every row is the account's network.
  */
 export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
@@ -86,13 +92,26 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
     const sections = useSelector(state =>
         selectAccountListSectionsWithVaultTokens(state, accountKey),
     );
-    const rows = sections.filter(isHeld);
+    const smallBalances = useSelector(state => selectAccountSmallBalances(state, accountKey));
+    const areSmallBalancesShown = useSelector(selectAreHomeAssetSmallBalancesDisplayed);
+    const heldRows = sections.filter(isHeld);
+    const rows = areSmallBalancesShown
+        ? heldRows
+        : heldRows.filter(section => !smallBalances.keys.has(getAccountListSectionKey(section)));
     const zeroBalanceSection = sections.find(section => section.type === 'zeroBalance');
     const zeroBalanceTokens =
         zeroBalanceSection?.type === 'zeroBalance' ? zeroBalanceSection.tokens : [];
     const isFoldable = rows.length > HOME_ASSET_ROW_LIMIT;
     const rowLimit = getHomeAssetRowLimit({ isFoldable, isExpanded });
     const shownRows = rowLimit === undefined ? rows : rows.slice(0, rowLimit);
+
+    const changeSmallBalances = (areShown: boolean) => {
+        // Turning them on while the table is folded would otherwise change nothing on screen.
+        if (areShown) {
+            setIsExpanded(true);
+        }
+        dispatch(setAreHomeAssetSmallBalancesShown(areShown));
+    };
 
     const openHiddenTokens = () => {
         analytics.report({
@@ -102,7 +121,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
         dispatch(gotoThunk({ routeName: 'suite-hidden-tokens' }));
     };
 
-    if (rows.length === 0 && zeroBalanceTokens.length === 0) {
+    if (heldRows.length === 0 && zeroBalanceTokens.length === 0) {
         return null;
     }
 
@@ -112,17 +131,12 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                 <Table.Header>
                     <Table.Row>
                         <Table.Cell padding={HOME_ASSET_CELL_PADDING.first}>
-                            <Row gap={12} alignItems="center">
-                                <Translation id="TR_ASSET" />
-                                <TextButton
-                                    size="small"
-                                    iconRight={CaretRightIcon}
-                                    onClick={openHiddenTokens}
-                                    data-testid="@wallet/account-assets/hidden-tokens"
-                                >
-                                    <Translation id="TR_HIDDEN_TOKENS" />
-                                </TextButton>
-                            </Row>
+                            <HomeAssetTableFilterHeader
+                                areSmallBalancesShown={areSmallBalancesShown}
+                                smallBalances={smallBalances.summary}
+                                onSmallBalancesChange={changeSmallBalances}
+                                onOpenHiddenTokens={openHiddenTokens}
+                            />
                         </Table.Cell>
                         <Table.Cell align="end">
                             <Translation id="TR_EXCHANGE_RATE" />
@@ -133,6 +147,11 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
+                    {rows.length === 0 && heldRows.length > 0 && (
+                        <HomeAssetSmallBalancesHiddenRow
+                            onShowSmallBalances={() => changeSmallBalances(true)}
+                        />
+                    )}
                     {shownRows.map(renderHeldRow)}
                     {isFoldable && (
                         <HomeAssetExpandRow

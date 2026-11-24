@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
 import { Translation } from '@suite/intl';
+import { gotoThunk } from '@suite/router';
 import {
     HOME_ASSET_ROW_LIMIT,
     getHomeAssetRowLimit,
@@ -11,6 +12,7 @@ import {
     selectHasShownWalletAssets,
     selectHomeAssetGrouping,
     selectIsHomeAssetTableFoldable,
+    selectSmallBalanceSummary,
 } from '@suite-common/assets';
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 import {
@@ -42,6 +44,7 @@ export const HomeAssetTable = () => {
     const [isExpanded, setIsExpanded] = useState(false);
     const grouping = useSelector(selectHomeAssetGrouping);
     const areSmallBalancesShown = useSelector(selectAreHomeAssetSmallBalancesDisplayed);
+    const smallBalances = useSelector(selectSmallBalanceSummary);
     const hasAssets = useSelector(selectHasShownWalletAssets);
     const { isDiscoveryRunning } = useDiscovery();
     const isFoldable = useSelector(state =>
@@ -57,9 +60,18 @@ export const HomeAssetTable = () => {
 
     const changeGrouping = useCallback(
         (chosen: HomeAssetsTableGrouping) => {
+            if (chosen !== grouping) {
+                analytics.report({
+                    type: events.dashboardAssetListMenuEvent.name,
+                    payload: {
+                        type: 'grouping',
+                        value: chosen === 'networks' ? 'by-networks' : 'default',
+                    },
+                });
+            }
             dispatch(setHomeAssetsTableGrouping(chosen));
         },
-        [dispatch],
+        [analytics, dispatch, grouping],
     );
 
     const changeSmallBalances = useCallback(
@@ -72,6 +84,23 @@ export const HomeAssetTable = () => {
         },
         [dispatch],
     );
+
+    // Only the menu's switch is reported; the row that brings small balances back is not.
+    const changeSmallBalancesInMenu = (areShown: boolean) => {
+        analytics.report({
+            type: events.dashboardAssetListMenuEvent.name,
+            payload: { type: 'show-small-balances', value: areShown },
+        });
+        changeSmallBalances(areShown);
+    };
+
+    const openHiddenTokens = () => {
+        analytics.report({
+            type: events.navigateFlowEvent.name,
+            payload: { action: 'navigate', type: 'hidden-tokens', from: 'dashboard' },
+        });
+        dispatch(gotoThunk({ routeName: 'suite-hidden-tokens' }));
+    };
 
     if (!hasAssets && isDiscoveryRunning) {
         return <AssetRowsSkeleton data-testid="@dashboard/home-asset-table/loading" />;
@@ -87,8 +116,10 @@ export const HomeAssetTable = () => {
                             <HomeAssetTableFilterHeader
                                 grouping={grouping}
                                 areSmallBalancesShown={areSmallBalancesShown}
+                                smallBalances={smallBalances}
                                 onGroupingChange={changeGrouping}
-                                onSmallBalancesChange={changeSmallBalances}
+                                onSmallBalancesChange={changeSmallBalancesInMenu}
+                                onOpenHiddenTokens={openHiddenTokens}
                             />
                         </Table.Cell>
                         <Table.Cell align="end">

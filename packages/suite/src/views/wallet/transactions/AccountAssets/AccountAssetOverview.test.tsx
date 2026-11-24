@@ -234,12 +234,27 @@ describe('the account overview with the asset-first Home', () => {
         expect(rowTestIds()).toContain(`@wallet/account-asset/eth/${ONE_INCH}`);
     });
 
-    it("offers no small-balance switch or grouping: those are the Home table's", () => {
-        renderOverview([ethAccount]);
+    it('offers the Home menu without grouping and, while small balances are off, leaves the dust out of the rows but in the total', () => {
+        renderOverview([ethAccount], { areSmallBalancesShown: false });
 
-        expect(screen.queryByTestId('@dashboard/home-asset/grouping')).not.toBeInTheDocument();
-        // 2.1 1INCH is worth 61c and stays listed.
-        expect(rowTestIds()).toContain(`@wallet/account-asset/eth/${ONE_INCH}`);
+        fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
+
+        expect(
+            screen.queryByTestId('@dashboard/home-asset/grouping/networks'),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByTestId('@dashboard/home-asset/small-balances-toggle'),
+        ).toBeInTheDocument();
+        // 2.1 1INCH is worth 61c.
+        expect(rowTestIds()).toEqual([
+            '@wallet/account-asset/eth/coin',
+            '@wallet/account-asset/eth/staking',
+            `@wallet/account-asset/eth/${USDC}`,
+        ]);
+        expect(screen.getByTestId('@wallet/account-assets/fiat-amount')).toHaveTextContent(
+            '$6,100.61',
+        );
+        expect(screen.getByTestId('@wallet/account-assets/count')).toHaveTextContent('3 assets');
     });
 
     it('counts an asset without a rate as nothing, as the mobile account total does', () => {
@@ -287,7 +302,8 @@ describe('the account overview with the asset-first Home', () => {
         it('reports opening the hidden tokens', () => {
             const { analytics } = renderOverview([ethAccount]);
 
-            fireEvent.click(screen.getByTestId('@wallet/account-assets/hidden-tokens'));
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/hidden-tokens'));
 
             expect(analytics.report).toHaveBeenCalledTimes(1);
             expect(analytics.report).toHaveBeenCalledWith(navigateEvent({ type: 'hidden-tokens' }));
@@ -302,6 +318,15 @@ describe('the account overview with the asset-first Home', () => {
             expect(analytics.report).toHaveBeenCalledWith(
                 navigateEvent({ type: 'earn', networkSymbol: 'eth' }),
             );
+        });
+
+        it("reports nothing for the small-balance switch, which is Home's event", () => {
+            const { analytics } = renderOverview([ethAccount]);
+
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/small-balances-toggle'));
+
+            expect(analytics.report).not.toHaveBeenCalled();
         });
     });
 });
