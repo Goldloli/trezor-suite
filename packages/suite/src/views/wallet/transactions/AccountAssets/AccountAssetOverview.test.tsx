@@ -215,7 +215,7 @@ describe('the account overview with the asset-first Home', () => {
     it('waits for the rates with a placeholder while nothing is priced yet', () => {
         renderOverview([ethAccount], { rates: {} });
 
-        expect(screen.getByTestId('@wallet/account-assets/skeleton')).toBeInTheDocument();
+        expect(screen.getByTestId('@wallet/account-assets/balance/skeleton')).toBeInTheDocument();
         expect(screen.queryByTestId('@wallet/account-assets/fiat-amount')).not.toBeInTheDocument();
         expect(screen.queryByTestId('@wallet/account-assets/no-rate')).not.toBeInTheDocument();
     });
@@ -232,7 +232,9 @@ describe('the account overview with the asset-first Home', () => {
         expect(screen.getByTestId('@wallet/account-assets/no-rate')).toHaveTextContent(
             messages.TR_FIAT_RATES_NOT_AVAILABLE.defaultMessage,
         );
-        expect(screen.queryByTestId('@wallet/account-assets/skeleton')).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId('@wallet/account-assets/balance/skeleton'),
+        ).not.toBeInTheDocument();
         expect(screen.queryByTestId('@wallet/account-assets/fiat-amount')).not.toBeInTheDocument();
     });
 

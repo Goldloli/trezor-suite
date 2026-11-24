@@ -1,5 +1,3 @@
-import { type ReactNode } from 'react';
-
 import { Translation } from '@suite/intl';
 import {
     selectEarnPositionsCount,
@@ -9,42 +7,13 @@ import {
     useEarnMissingRateTickersQuery,
 } from '@suite-common/earn';
 import { useYieldOpportunities } from '@suite-common/wallet-core';
-import { Card, Column, Skeleton, Text } from '@trezor/components';
+import { Text } from '@trezor/components';
 import { BigNumber } from '@trezor/utils';
 
 import { useDiscovery } from '#src/hooks/suite/useDiscovery';
 import { useSelector } from '#src/hooks/suite/useSelector';
+import { TotalBalanceCard } from '#src/views/home/HomeBalance/TotalBalanceCard';
 import { TotalBalanceHeadline } from '#src/views/home/HomeBalance/TotalBalanceHeadline';
-
-type EarnBalanceCardWrapperProps = {
-    children?: ReactNode;
-    positionsCount?: number;
-};
-
-const EarnBalanceCardWrapper = ({ children, positionsCount }: EarnBalanceCardWrapperProps) => (
-    <Card>
-        <Column alignItems="flex-start" gap={8}>
-            <Text typographyStyle="body-md" intent="neutral" priority="secondary">
-                <Translation id="TR_EARN_EARNING_BALANCE" />
-            </Text>
-
-            {children}
-
-            {positionsCount !== undefined && (
-                <Text typographyStyle="body-md" intent="neutral" priority="secondary">
-                    <Translation
-                        id={
-                            positionsCount === 0
-                                ? 'TR_EARN_NO_POSITIONS'
-                                : 'TR_EARN_ACTIVE_POSITIONS'
-                        }
-                        values={{ count: positionsCount }}
-                    />
-                </Text>
-            )}
-        </Column>
-    </Card>
-);
 
 export const EarnBalanceCard = () => {
     const { isDiscoveryRunning } = useDiscovery();
@@ -68,24 +37,28 @@ export const EarnBalanceCard = () => {
     );
 
     const isLoading = isDiscoveryRunning || isFiatRatesLoading;
-
-    if (isLoading) {
-        return (
-            <EarnBalanceCardWrapper>
-                <Skeleton width={180} height={56} />
-            </EarnBalanceCardWrapper>
-        );
-    }
-
     const fiatValue = isFiatTotalUnavailable ? undefined : new BigNumber(totalEarnFiatAmount);
 
     return (
-        <EarnBalanceCardWrapper positionsCount={earnPositionsCount}>
+        <TotalBalanceCard
+            label={<Translation id="TR_EARN_EARNING_BALANCE" />}
+            isLoading={isLoading}
+        >
             <TotalBalanceHeadline
                 fiatValue={fiatValue}
                 isApproximate={isFiatTotalIncomplete}
                 fallback={<Translation id="TR_EARN_N_A" />}
             />
-        </EarnBalanceCardWrapper>
+            <Text typographyStyle="body-md" intent="neutral" priority="secondary">
+                <Translation
+                    id={
+                        earnPositionsCount === 0
+                            ? 'TR_EARN_NO_POSITIONS'
+                            : 'TR_EARN_ACTIVE_POSITIONS'
+                    }
+                    values={{ count: earnPositionsCount }}
+                />
+            </Text>
+        </TotalBalanceCard>
     );
 };
