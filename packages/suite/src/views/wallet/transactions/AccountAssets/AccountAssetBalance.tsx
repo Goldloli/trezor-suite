@@ -38,7 +38,8 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
     const { balanceSectionRef } = useAccountHeaderContext();
 
     return (
-        <Box flex="1" minWidth={280}>
+        // The header watches this section; the card stays mounted while its total is loading.
+        <Box ref={balanceSectionRef} flex="1" minWidth={280}>
             <TotalBalanceCard
                 label={<Translation id="TR_ACCOUNT_ASSETS_BALANCE" />}
                 labelAside={
@@ -52,7 +53,7 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
                 isStretched
                 data-testid="@wallet/account-assets/balance"
             >
-                <Column ref={balanceSectionRef} alignItems="flex-start">
+                <Column alignItems="flex-start">
                     <TotalBalanceHeadline
                         fiatValue={fiatValue}
                         isApproximate={isIncomplete}
