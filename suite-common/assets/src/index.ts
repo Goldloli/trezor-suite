@@ -11,4 +11,5 @@ export {
 export * from './homeAssetTableFeedbackThunks';
 export * from './homeAssetTableSelectors';
 export * from './accountAssetSelectors';
+export * from './useAccountAssetMissingRateTickersQuery';
 export * from './homeAssetTableUtils';

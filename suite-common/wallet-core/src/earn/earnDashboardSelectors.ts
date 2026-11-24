@@ -59,12 +59,7 @@ import {
     type YieldOpportunity,
     type YieldPromoListItem,
 } from './earnDashboardTypes';
-import {
-    type EarnFiatPosition,
-    type EarnFiatValuation,
-    getEarnPositionFiatAmount,
-    sumEarnFiatValuations,
-} from './earnDepositsFiatUtils';
+import { type EarnFiatPosition, getEarnPositionFiatAmount } from './earnDepositsFiatUtils';
 import { type AccountsRootState } from '../accounts/accountsReducer';
 import { selectVisibleDeviceAccounts } from '../accounts/accountsSelectors';
 import {
@@ -73,6 +68,7 @@ import {
     selectCurrentFiatRatesByFiatRateKeys,
 } from '../fiat-rates/fiatRatesSelectors';
 import { type FiatRatesRootState } from '../fiat-rates/fiatRatesTypes';
+import { type FiatValuation, sumFiatValuations } from '../fiat-rates/fiatValuationUtils';
 import {
     type WalletSettingsRootState,
     selectBaseCurrency,
@@ -648,7 +644,7 @@ export const selectYieldCurrentFiatRates = (
 const createEarnFiatValuations = (
     positions: readonly EarnFiatPosition[],
     currentFiatRates: RatesByKey | undefined,
-): EarnFiatValuation[] =>
+): FiatValuation[] =>
     returnStableArrayIfEmpty(
         positions.map(position => ({
             tickerId: position.tickerId,
@@ -668,12 +664,12 @@ export const selectYieldFiatValuations = createMemoizedSelector(
 
 export const selectStakingTotalFiatAmount = createMemoizedSelector(
     [selectStakingFiatValuations],
-    sumEarnFiatValuations,
+    sumFiatValuations,
 );
 
 export const selectYieldTotalFiatAmount = createMemoizedSelector(
     [selectYieldFiatValuations],
-    sumEarnFiatValuations,
+    sumFiatValuations,
 );
 
 export const selectStakingPositionsCount = createMemoizedSelector(

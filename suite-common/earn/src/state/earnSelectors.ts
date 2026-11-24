@@ -4,15 +4,15 @@ import {
     selectDeviceStakingPositionsCount,
 } from '@suite-common/earn-staking';
 import {
-    type EarnFiatValuation,
     type EarnListRootState,
+    type FiatValuation,
     type YieldOpportunity,
     createStableTickerIds,
-    getEarnMissingRateTickerIds,
-    hasAnyEarnFiatRate,
+    getMissingRateTickerIds,
+    hasAnyFiatRate,
     selectYieldFiatValuations,
     selectYieldPositionsCount,
-    sumEarnFiatValuations,
+    sumFiatValuations,
 } from '@suite-common/wallet-core';
 import { createWeakMapSelector, returnStableArrayIfEmpty } from '@trezor/redux-utils';
 
@@ -28,18 +28,18 @@ const selectIsFiatRatesLoadingParam = (
 
 export const selectEarnFiatValuations = createMemoizedSelector(
     [selectDeviceStakingFiatValuations, selectYieldFiatValuations],
-    (stakingFiatValuations, yieldFiatValuations): readonly EarnFiatValuation[] =>
+    (stakingFiatValuations, yieldFiatValuations): readonly FiatValuation[] =>
         returnStableArrayIfEmpty([...stakingFiatValuations, ...yieldFiatValuations]),
 );
 
 export const selectEarnTotalFiatAmount = createMemoizedSelector(
     [selectEarnFiatValuations],
-    (valuations): string => sumEarnFiatValuations(valuations),
+    (valuations): string => sumFiatValuations(valuations),
 );
 
 export const selectEarnMissingTickerIds = createMemoizedSelector(
     [selectEarnFiatValuations],
-    valuations => createStableTickerIds(...getEarnMissingRateTickerIds(valuations)),
+    valuations => createStableTickerIds(...getMissingRateTickerIds(valuations)),
 );
 
 export const selectIsEarnFiatTotalIncomplete = createMemoizedSelector(
@@ -51,7 +51,7 @@ export const selectIsEarnFiatTotalIncomplete = createMemoizedSelector(
 export const selectIsEarnFiatTotalUnavailable = createMemoizedSelector(
     [selectIsEarnFiatTotalIncomplete, selectEarnFiatValuations],
     (isFiatTotalIncomplete, valuations): boolean =>
-        isFiatTotalIncomplete && !hasAnyEarnFiatRate(valuations),
+        isFiatTotalIncomplete && !hasAnyFiatRate(valuations),
 );
 
 export const selectIsEarnBalanceBreakdownDisplayed = createMemoizedSelector(

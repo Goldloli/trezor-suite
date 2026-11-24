@@ -1,5 +1,3 @@
-import { A, F } from '@mobily/ts-belt';
-
 import {
     type BaseCurrencyAmount,
     type CryptoBaseCurrencyPair,
@@ -15,18 +13,6 @@ export type EarnFiatPosition = {
     fiatRateKey: CryptoBaseCurrencyPair;
     balance: string;
 };
-
-export type EarnFiatValuation = {
-    tickerId: TickerId;
-    fiatAmount: BaseCurrencyAmount | null;
-};
-
-export const getUniqueTickers = (tickers: TickerId[]): TickerId[] =>
-    F.toMutable(
-        A.uniqBy(tickers, ticker =>
-            ticker.tokenAddress ? `${ticker.symbol}-${ticker.tokenAddress}` : ticker.symbol,
-        ),
-    );
 
 export const getTokenFiatRate = (
     currentFiatRates: RatesByKey | undefined,
@@ -58,19 +44,3 @@ export const getEarnPositionFiatAmount = (
     isTestnet(tickerId.symbol)
         ? asBaseCurrencyAmount(new BigNumber(0))
         : toFiatCurrency({ amount: balance, rate: currentFiatRates?.[fiatRateKey]?.rate });
-
-export const sumEarnFiatValuations = (valuations: readonly EarnFiatValuation[]): string =>
-    valuations
-        .reduce(
-            (total, { fiatAmount }) => (fiatAmount === null ? total : total.plus(fiatAmount)),
-            new BigNumber(0),
-        )
-        .toString();
-
-export const getEarnMissingRateTickerIds = (valuations: readonly EarnFiatValuation[]): TickerId[] =>
-    getUniqueTickers(
-        valuations.filter(({ fiatAmount }) => fiatAmount === null).map(({ tickerId }) => tickerId),
-    );
-
-export const hasAnyEarnFiatRate = (valuations: readonly EarnFiatValuation[]): boolean =>
-    valuations.some(({ fiatAmount }) => fiatAmount !== null);

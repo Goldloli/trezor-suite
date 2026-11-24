@@ -18,11 +18,12 @@ import { FirmwareType, type StaticSessionId } from '@trezor/device-utils';
 import { BigNumber } from '@trezor/utils';
 
 import {
+    selectAccountAssetMissingRateTickerIds,
     selectAccountAvailableAmount,
     selectAccountStakingAmount,
     selectAccountStakingRatio,
-    selectIsAssetTableRatePending,
-    selectIsAssetTableTotalIncomplete,
+    selectIsAccountAssetFiatTotalIncomplete,
+    selectIsAccountAssetFiatTotalUnavailable,
 } from './accountAssetSelectors';
 import {
     type HomeAssetTableState,
@@ -95,6 +96,8 @@ type CreateStateOptions = {
     areSmallBalancesShown?: boolean;
     localCurrency?: 'usd' | 'eur';
     stakingPositions?: Partial<Record<AccountKey, readonly StakingPosition[]>>;
+    /** Tokens the user chose to show although no definition vouches for them. */
+    shownTokens?: TokenAddress[];
 };
 
 const createState = (
@@ -104,6 +107,7 @@ const createState = (
         areSmallBalancesShown = true,
         localCurrency = 'usd',
         stakingPositions = {},
+        shownTokens = [],
     }: CreateStateOptions = {},
 ) =>
     ({
@@ -129,7 +133,7 @@ const createState = (
             fiat: { current: rates, lastWeek: {}, historic: {} },
         },
         tokenDefinitions: {
-            [ETH]: { coin: { data: [USDC, ENS, HIDDEN], hide: [HIDDEN], show: [] } },
+            [ETH]: { coin: { data: [USDC, ENS, HIDDEN], hide: [HIDDEN], show: shownTokens } },
         },
         networks: {
             [ETH]: { symbol: ETH, name: 'Ethereum' },
@@ -231,52 +235,60 @@ describe('the fiat total of an account', () => {
     const account = mockAccount({
         tokens: [mockToken(USDC, 'USDC', '1000', 6), mockToken(ENS, 'ENS', '1.12', 18)],
     });
-    // A fetch that failed holds no number and is not tried again until the next refresh.
-    const failed = (contract?: TokenAddress) => ({
-        [getFiatRateKey(ETH, 'usd', contract)]: { error: 'Failed to fetch' },
-    });
-    const flagsOf = (state: HomeAssetTableState, ofAccount: Account) => ({
-        isPending: selectIsAssetTableRatePending(state, ofAccount.key),
-        isIncomplete: selectIsAssetTableTotalIncomplete(state, ofAccount.key),
+    const SHOWN_UNKNOWN = '0x00000000000000000000000000000000000000bb' as TokenAddress;
+    const flagsOf = (
+        state: HomeAssetTableState,
+        ofAccount: Account,
+        isFiatRatesLoading = false,
+    ) => ({
+        missing: selectAccountAssetMissingRateTickerIds(state, ofAccount.key),
+        isIncomplete: selectIsAccountAssetFiatTotalIncomplete(
+            state,
+            ofAccount.key,
+            isFiatRatesLoading,
+        ),
+        isUnavailable: selectIsAccountAssetFiatTotalUnavailable(
+            state,
+            ofAccount.key,
+            isFiatRatesLoading,
+        ),
     });
 
-    it('adds up every priced asset, and marks nothing missing when all of them are', () => {
+    it('adds up every priced asset, and misses nothing when all of them are', () => {
         const state = createState([account], {
             rates: { ...mockRate(3000), ...mockRate(1, USDC), ...mockRate(20, ENS) },
         });
 
         expect(totalOf(state, account)).toEqual(new BigNumber('4622.4'));
-        expect(flagsOf(state, account)).toEqual({ isPending: false, isIncomplete: false });
-    });
-
-    it('adds up what it can, and says a held asset without a rate is missing', () => {
-        const state = createState([account], {
-            rates: { ...failed(), ...mockRate(1, USDC), ...mockRate(20, ENS) },
+        expect(flagsOf(state, account)).toEqual({
+            missing: [],
+            isIncomplete: false,
+            isUnavailable: false,
         });
-
-        expect(totalOf(state, account)).toEqual(new BigNumber('1022.4'));
-        expect(flagsOf(state, account)).toEqual({ isPending: false, isIncomplete: true });
     });
 
-    it('does not call a total incomplete while the rate it lacks is still on its way', () => {
+    it('adds up what it can, and asks for the rate of a held asset that has none', () => {
         const state = createState([account], {
             rates: { ...mockRate(1, USDC), ...mockRate(20, ENS) },
         });
 
         expect(totalOf(state, account)).toEqual(new BigNumber('1022.4'));
-        expect(flagsOf(state, account)).toEqual({ isPending: true, isIncomplete: false });
+        expect(flagsOf(state, account)).toEqual({
+            missing: [{ symbol: ETH, tokenAddress: undefined }],
+            isIncomplete: true,
+            isUnavailable: false,
+        });
     });
 
-    it('keeps a total incomplete while a rate that failed is fetched again', () => {
-        // The periodic refresh retries a failed rate; its error stays until the retry settles.
-        const retrying = {
-            [getFiatRateKey(ETH, 'usd')]: { error: 'Failed to fetch', isLoading: true },
-        };
+    it('does not call a total incomplete while the rate it lacks is on its way', () => {
         const state = createState([account], {
-            rates: { ...retrying, ...mockRate(1, USDC), ...mockRate(20, ENS) },
+            rates: { ...mockRate(1, USDC), ...mockRate(20, ENS) },
         });
 
-        expect(flagsOf(state, account)).toEqual({ isPending: false, isIncomplete: true });
+        expect(flagsOf(state, account, true)).toMatchObject({
+            isIncomplete: false,
+            isUnavailable: false,
+        });
     });
 
     it('does not miss an empty coin, whatever its rate', () => {
@@ -284,27 +296,29 @@ describe('the fiat total of an account', () => {
             formattedBalance: '0',
             tokens: [mockToken(USDC, 'USDC', '5', 6)],
         });
-        const state = createState([empty], { rates: { ...failed(), ...mockRate(1, USDC) } });
+        const state = createState([empty], { rates: mockRate(1, USDC) });
 
-        expect(flagsOf(state, empty).isIncomplete).toBe(false);
+        expect(flagsOf(state, empty)).toEqual({
+            missing: [],
+            isIncomplete: false,
+            isUnavailable: false,
+        });
     });
 
-    it('has no total while nothing is priced, and waits for rates still on their way', () => {
+    it('has no total while nothing is priced, and is unavailable only once nothing is on its way', () => {
         const state = createState([account]);
 
         expect(totalOf(state, account)).toBeUndefined();
-        expect(flagsOf(state, account).isPending).toBe(true);
+        expect(flagsOf(state, account, true).isUnavailable).toBe(false);
+        expect(flagsOf(state, account).isUnavailable).toBe(true);
+        expect(flagsOf(state, account).missing).toEqual([
+            { symbol: ETH, tokenAddress: undefined },
+            { symbol: ETH, tokenAddress: USDC },
+            { symbol: ETH, tokenAddress: ENS },
+        ]);
     });
 
-    it('stops waiting once every missing rate has failed', () => {
-        const state = createState([account], {
-            rates: { ...failed(), ...failed(USDC), ...failed(ENS) },
-        });
-
-        expect(flagsOf(state, account).isPending).toBe(false);
-    });
-
-    it('never waits for a testnet, which is not priced', () => {
+    it('never asks for the rate of a testnet, which is not priced', () => {
         const testnet = mockAccount({
             key: `descriptor0-tsep-${ALICE}` as AccountKey,
             symbol: TSEP,
@@ -312,8 +326,29 @@ describe('the fiat total of an account', () => {
         });
 
         expect(flagsOf(createState([testnet]), testnet)).toEqual({
-            isPending: false,
-            isIncomplete: false,
+            missing: [],
+            isIncomplete: true,
+            isUnavailable: true,
         });
+    });
+
+    it('never asks for the rate of a token whose rate is not fetched', () => {
+        const holder = mockAccount({
+            formattedBalance: '0',
+            tokens: [mockToken(SHOWN_UNKNOWN, 'UNKNOWN', '5', 6)],
+        });
+        const state = createState([holder], { shownTokens: [SHOWN_UNKNOWN] });
+
+        expect(rowsOf(state, holder)).toEqual([['UNKNOWN', '5', undefined]]);
+        expect(flagsOf(state, holder).missing).toEqual([]);
+    });
+
+    it('keeps the missing tickers across a recreated state', () => {
+        const rates = { ...mockRate(1, USDC), ...mockRate(20, ENS) };
+        const state = createState([account], { rates });
+
+        expect(selectAccountAssetMissingRateTickerIds(state, account.key)).toBe(
+            selectAccountAssetMissingRateTickerIds(state, account.key),
+        );
     });
 });

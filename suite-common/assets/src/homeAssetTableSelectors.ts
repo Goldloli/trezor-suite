@@ -17,6 +17,7 @@ import { type TokenAddress, type TokenSymbol, toTokenSymbol } from '@suite-commo
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 import {
     type FiatRatesRootState,
+    type FiatValuation,
     type WalletAssetKey,
     type WalletSettingsRootState,
     getWalletAssetKey,
@@ -863,6 +864,31 @@ export const selectWalletAssetFiatValue = createMemoizedSelector(
 
         return fiatValue === undefined ? undefined : asBaseCurrencyAmount(fiatValue);
     },
+);
+
+/** What each shown asset is worth, so a total can say what it leaves out; null where there is no rate. */
+export const selectShownWalletAssetFiatValuations = createMemoizedSelector(
+    [selectShownWalletAssetKeys, selectWalletAssets, selectWalletAssetValues],
+    (assetKeys, assets, values): readonly FiatValuation[] =>
+        returnStableArrayIfEmpty(
+            assetKeys.flatMap(assetKey => {
+                const asset = assets.get(assetKey);
+                const fiatValue = values.get(assetKey);
+
+                return asset === undefined
+                    ? []
+                    : [
+                          {
+                              tickerId: {
+                                  symbol: asset.networkSymbol,
+                                  tokenAddress: asset.contractAddress,
+                              },
+                              fiatAmount:
+                                  fiatValue === undefined ? null : asBaseCurrencyAmount(fiatValue),
+                          },
+                      ];
+            }),
+        ),
 );
 
 export type HomeAssetTotals = {

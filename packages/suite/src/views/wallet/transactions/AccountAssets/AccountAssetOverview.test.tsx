@@ -4,6 +4,7 @@ import { screen } from '@testing-library/react';
 
 import { initialState as selectedAccountInitialState } from '@suite/account';
 import { messages } from '@suite/intl';
+import { useAccountAssetMissingRateTickersQuery } from '@suite-common/assets';
 import { mockStakingState } from '@suite-common/earn-staking/mocks';
 import { stakingAmountSchema } from '@suite-common/earn-staking-common';
 import { mockStakingPosition } from '@suite-common/earn-staking-common/mocks';
@@ -22,6 +23,12 @@ import { renderWithProviders } from '#src/support/test-utils/hooksHelper';
 
 import { AccountAssetOverview } from './AccountAssetOverview';
 import { type MockSuiteState, mockInitialAppState } from '../../../../../mocks/mockInitialAppState';
+
+// The query fetches rates over the network; a test only says whether it is still fetching.
+jest.mock('@suite-common/assets', () => ({
+    ...jest.requireActual('@suite-common/assets'),
+    useAccountAssetMissingRateTickersQuery: jest.fn(),
+}));
 
 global.ResizeObserver = class MockedResizeObserver {
     observe = jest.fn();
@@ -137,10 +144,17 @@ const getState = (
     },
 });
 
+type RenderOverviewOptions = Partial<GetStateOptions> & {
+    /** Whether the rates the total lacks are still being fetched. */
+    isFiatRatesLoading?: boolean;
+};
+
 const renderOverview = (
     accounts: Account[],
-    { rates = PRICED_RATES, ...options }: Partial<GetStateOptions> = {},
+    { rates = PRICED_RATES, isFiatRatesLoading = false, ...options }: RenderOverviewOptions = {},
 ) => {
+    jest.mocked(useAccountAssetMissingRateTickersQuery).mockReturnValue({ isFiatRatesLoading });
+
     const { services } = createTestCompositionRoot<void, MockSuiteState>({
         preloadedState: getState(accounts, { rates, ...options }),
     });
@@ -213,7 +227,7 @@ describe('the account overview with the asset-first Home', () => {
     });
 
     it('waits for the rates with a placeholder while nothing is priced yet', () => {
-        renderOverview([ethAccount], { rates: {} });
+        renderOverview([ethAccount], { rates: {}, isFiatRatesLoading: true });
 
         expect(screen.getByTestId('@wallet/account-assets/balance/skeleton')).toBeInTheDocument();
         expect(screen.queryByTestId('@wallet/account-assets/fiat-amount')).not.toBeInTheDocument();

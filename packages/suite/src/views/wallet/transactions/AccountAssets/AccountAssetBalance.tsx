@@ -1,9 +1,10 @@
 import { Translation } from '@suite/intl';
 import {
     selectHomeAssetTotals,
-    selectIsAssetTableRatePending,
-    selectIsAssetTableTotalIncomplete,
+    selectIsAccountAssetFiatTotalIncomplete,
+    selectIsAccountAssetFiatTotalUnavailable,
     selectShownWalletAssetKeys,
+    useAccountAssetMissingRateTickersQuery,
 } from '@suite-common/assets';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { Box, Column, Row } from '@trezor/components';
@@ -25,8 +26,13 @@ type AccountAssetBalanceProps = {
 export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) => {
     const assetCount = useSelector(state => selectShownWalletAssetKeys(state, accountKey).length);
     const { fiatValue } = useSelector(state => selectHomeAssetTotals(state, accountKey));
-    const isIncomplete = useSelector(state => selectIsAssetTableTotalIncomplete(state, accountKey));
-    const isRatePending = useSelector(state => selectIsAssetTableRatePending(state, accountKey));
+    const { isFiatRatesLoading } = useAccountAssetMissingRateTickersQuery(accountKey);
+    const isIncomplete = useSelector(state =>
+        selectIsAccountAssetFiatTotalIncomplete(state, accountKey, isFiatRatesLoading),
+    );
+    const isUnavailable = useSelector(state =>
+        selectIsAccountAssetFiatTotalUnavailable(state, accountKey, isFiatRatesLoading),
+    );
     const { balanceSectionRef } = useAccountHeaderContext();
 
     return (
@@ -38,7 +44,8 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
                         <Translation id="TR_ACCOUNT_ASSETS_COUNT" values={{ count: assetCount }} />
                     </span>
                 }
-                isLoading={fiatValue === undefined && isRatePending}
+                // A total already priced in part stays while the rest is fetched.
+                isLoading={fiatValue === undefined && isFiatRatesLoading}
                 isStretched
                 data-testid="@wallet/account-assets/balance"
             >
@@ -49,7 +56,7 @@ export const AccountAssetBalance = ({ accountKey }: AccountAssetBalanceProps) =>
                         data-testid="@wallet/account-assets/fiat-amount"
                     />
                     {/* Nothing is priced and no rate is on its way: say there is none. */}
-                    {fiatValue === undefined && (
+                    {isUnavailable && (
                         <Row
                             height={TOTAL_BALANCE_HEIGHT}
                             alignItems="flex-start"
