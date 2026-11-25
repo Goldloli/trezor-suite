@@ -12160,6 +12160,10 @@ export const messages = defineMessages({
         id: 'TR_EARN_LIDO_PAGE_TITLE',
         defaultMessage: 'Lido staking',
     },
+    TR_EARN_LIDO_ROW_SUBTITLE: {
+        id: 'TR_EARN_LIDO_ROW_SUBTITLE',
+        defaultMessage: 'Lido Ethereum staking',
+    },
     TR_EARN_LIDO_CLAIM_READY: {
         id: 'TR_EARN_LIDO_CLAIM_READY',
         defaultMessage: '{amount} ready to claim',
