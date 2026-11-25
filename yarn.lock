@@ -14530,6 +14530,7 @@ __metadata:
     "@suite-native/link": "workspace:*"
     "@suite-native/navigation": "workspace:*"
     "@suite-native/performance-metrics": "workspace:*"
+    "@suite-native/refer-a-friend": "workspace:*"
     "@suite-native/settings": "workspace:*"
     "@suite-native/suite-sync": "workspace:*"
     "@suite-native/test-utils-store": "workspace:*"
@@ -14678,6 +14679,33 @@ __metadata:
     react-native: "npm:0.88.1"
     react-native-view-shot: "npm:6.1.1"
     react-redux: "npm:9.3.1"
+  languageName: unknown
+  linkType: soft
+
+"@suite-native-app/module-refer-a-friend@workspace:suite-native-app/module-refer-a-friend":
+  version: 0.0.0-use.local
+  resolution: "@suite-native-app/module-refer-a-friend@workspace:suite-native-app/module-refer-a-friend"
+  dependencies:
+    "@react-navigation/native": "npm:7.1.31"
+    "@react-navigation/native-stack": "npm:7.12.0"
+    "@suite-common/formatters": "workspace:*"
+    "@suite-common/sign-verify": "workspace:*"
+    "@suite-common/wallet-core": "workspace:*"
+    "@suite-common/wallet-types": "workspace:*"
+    "@suite-common/wallet-utils": "workspace:*"
+    "@suite-native/atoms": "workspace:*"
+    "@suite-native/device": "workspace:*"
+    "@suite-native/device-authorization": "workspace:*"
+    "@suite-native/intl": "workspace:*"
+    "@suite-native/navigation": "workspace:*"
+    "@suite-native/refer-a-friend": "workspace:*"
+    "@trezor/dependency-injection": "workspace:*"
+    "@trezor/network-cardano-suite-common": "workspace:*"
+    "@trezor/redux-utils": "workspace:*"
+    "@trezor/styles-native": "workspace:*"
+    "@trezor/utils": "workspace:*"
+    react: "npm:19.3.0"
+    react-redux: "npm:9.3.0"
   languageName: unknown
   linkType: soft
 
@@ -16607,6 +16635,20 @@ __metadata:
     react-native: "npm:0.88.1"
     react-native-gesture-handler: "npm:~3.3.0"
     react-native-reanimated: "npm:4.7.1"
+  languageName: unknown
+  linkType: soft
+
+"@suite-native/refer-a-friend@workspace:*, @suite-native/refer-a-friend@workspace:suite-native/refer-a-friend":
+  version: 0.0.0-use.local
+  resolution: "@suite-native/refer-a-friend@workspace:suite-native/refer-a-friend"
+  dependencies:
+    "@react-navigation/native": "npm:7.1.31"
+    "@suite-common/refer-a-friend": "workspace:*"
+    "@suite-native/atoms": "workspace:*"
+    react: "npm:19.3.0"
+    react-native: "npm:0.88.1"
+    react-native-svg: "npm:15.16.0"
+    react-redux: "npm:9.3.0"
   languageName: unknown
   linkType: soft
 
@@ -43367,6 +43409,25 @@ __metadata:
   peerDependencies:
     react: ^19.3.0
   checksum: 10/abc46a957cb5ea4d0477685c2748b4a7454859d4f8a832537c3e72b105a1a91705dc7b03dea07d5b9fce56e183979f6128cd087a423552842218c84e2413b111
+  languageName: node
+  linkType: hard
+
+"react-redux@npm:9.3.0":
+  version: 9.3.0
+  resolution: "react-redux@npm:9.3.0"
+  dependencies:
+    "@types/use-sync-external-store": "npm:^0.0.6"
+    use-sync-external-store: "npm:^1.4.0"
+  peerDependencies:
+    "@types/react": ^18.2.25 || ^19
+    react: ^18.0 || ^19
+    redux: ^5.0.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    redux:
+      optional: true
+  checksum: 10/3384e98e382ddb2f2a8f35bc7145fabd60f2fb0ccd999df5587bd926de9590f52cd3a29c4a01fe191d710a9c8f9d7293efff8d5fc32debc84de25c911b70fc45
   languageName: node
   linkType: hard
 
