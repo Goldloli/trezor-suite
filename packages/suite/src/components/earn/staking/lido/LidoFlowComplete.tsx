@@ -42,7 +42,7 @@ export const LidoFlowComplete = ({
             <Button
                 intent="neutral"
                 priority="secondary"
-                onClick={() => navigateToLidoRoute('wallet-staking')}
+                onClick={() => navigateToLidoRoute('earn-lido')}
             >
                 <Translation id="TR_EARN_LIDO_BACK_TO_STAKING" />
             </Button>

@@ -12160,6 +12160,67 @@ export const messages = defineMessages({
         id: 'TR_EARN_LIDO_PAGE_TITLE',
         defaultMessage: 'Lido staking',
     },
+    TR_EARN_LIDO_CLAIM_READY: {
+        id: 'TR_EARN_LIDO_CLAIM_READY',
+        defaultMessage: '{amount} ready to claim',
+    },
+    TR_EARN_LIDO_EARN_MORE: {
+        id: 'TR_EARN_LIDO_EARN_MORE',
+        defaultMessage: '<highlight>Earn {amount} more yearly</highlight> by staking more.',
+    },
+    TR_EARN_LIDO_UNSTAKING_TITLE: {
+        id: 'TR_EARN_LIDO_UNSTAKING_TITLE',
+        defaultMessage: 'Unstaking',
+    },
+    TR_EARN_LIDO_UNSTAKING_TITLE_WITH_TIME: {
+        id: 'TR_EARN_LIDO_UNSTAKING_TITLE_WITH_TIME',
+        defaultMessage: 'Unstaking ({value})',
+    },
+    TR_EARN_LIDO_STEP_IN_QUEUE: {
+        id: 'TR_EARN_LIDO_STEP_IN_QUEUE',
+        defaultMessage: 'In the Lido withdrawal queue',
+    },
+    TR_EARN_LIDO_RATE_TOOLTIP: {
+        id: 'TR_EARN_LIDO_RATE_TOOLTIP',
+        defaultMessage: "Expected yearly return. This rate isn't fixed and can change.",
+    },
+    TR_EARN_LIDO_DETAIL_REWARD_PAYOUT: {
+        id: 'TR_EARN_LIDO_DETAIL_REWARD_PAYOUT',
+        defaultMessage: 'Reward payout',
+    },
+    TR_EARN_LIDO_DETAIL_REWARD_PAYOUT_VALUE: {
+        id: 'TR_EARN_LIDO_DETAIL_REWARD_PAYOUT_VALUE',
+        defaultMessage: 'Daily',
+    },
+    TR_EARN_LIDO_DETAIL_REPRESENTS: {
+        id: 'TR_EARN_LIDO_DETAIL_REPRESENTS',
+        defaultMessage: 'Represents',
+    },
+    TR_EARN_LIDO_REPRESENTS_TOOLTIP: {
+        id: 'TR_EARN_LIDO_REPRESENTS_TOOLTIP',
+        defaultMessage:
+            'What your wstETH is worth in {displaySymbol} at the current Lido rate. It grows as staking rewards are added.',
+    },
+    TR_EARN_LIDO_DETAIL_PROVIDER: {
+        id: 'TR_EARN_LIDO_DETAIL_PROVIDER',
+        defaultMessage: 'Provider',
+    },
+    TR_EARN_LIDO_DETAIL_PRODUCT: {
+        id: 'TR_EARN_LIDO_DETAIL_PRODUCT',
+        defaultMessage: 'Product',
+    },
+    TR_EARN_LIDO_DETAIL_PRODUCT_VALUE: {
+        id: 'TR_EARN_LIDO_DETAIL_PRODUCT_VALUE',
+        defaultMessage: 'Liquid staking',
+    },
+    TR_EARN_LIDO_CARD_STAKED: {
+        id: 'TR_EARN_LIDO_CARD_STAKED',
+        defaultMessage: 'Staked',
+    },
+    TR_EARN_LIDO_CARD_RATE: {
+        id: 'TR_EARN_LIDO_CARD_RATE',
+        defaultMessage: 'APR',
+    },
     TR_EARN_LIDO_STAKE_TITLE: {
         id: 'TR_EARN_LIDO_STAKE_TITLE',
         defaultMessage: 'Stake {displaySymbol} with Lido',
