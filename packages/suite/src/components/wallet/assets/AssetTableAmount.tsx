@@ -1,3 +1,4 @@
+import { ASSET_TABLE_BALANCE_MAX_WIDTH, ASSET_TABLE_LINE_GAP } from '@suite/assets';
 import { type TokenAddress } from '@suite-common/tokens';
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { Column, Text } from '@trezor/components';
@@ -5,8 +6,6 @@ import { Column, Text } from '@trezor/components';
 import { TruncatedAmount } from '#src/components/earn/yield/common/TruncatedAmount';
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
 import { FormattedCryptoAmount } from '#src/components/suite/FormattedCryptoAmount';
-
-import { ASSET_TABLE_BALANCE_MAX_WIDTH, ASSET_TABLE_LINE_GAP } from './assetTableLayout';
 
 type AssetTableAmountProps = {
     symbol: NetworkSymbol;

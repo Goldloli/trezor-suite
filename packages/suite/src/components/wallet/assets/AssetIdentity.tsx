@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 
-import { AssetIcon, AssetSymbol } from '@suite/assets';
+import { ASSET_TABLE_LINE_GAP, AssetIcon, AssetSymbol } from '@suite/assets';
 import { useFormatters } from '@suite-common/formatters';
 import { selectIsSpecificCoinDefinitionKnown } from '@suite-common/token-definitions';
 import { type TokenAddress } from '@suite-common/tokens';
@@ -8,8 +8,6 @@ import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { Column, Row, TOOLTIP_DELAY_LONG, Text, TruncateWithTooltip } from '@trezor/components';
 
 import { useSelector } from '#src/hooks/suite/useSelector';
-
-import { ASSET_TABLE_LINE_GAP } from './assetTableLayout';
 
 type AssetIdentityProps = {
     symbol: NetworkSymbol;

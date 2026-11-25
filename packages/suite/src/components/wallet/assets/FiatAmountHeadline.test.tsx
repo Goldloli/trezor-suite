@@ -2,12 +2,12 @@ import '@suite-common/test-utils/globalOverrides';
 
 import { screen } from '@testing-library/react';
 
+import { FiatAmountHeadline } from '@suite/assets';
 import { createTestCompositionRoot } from '@suite-common/test-utils';
 import { BigNumber } from '@trezor/utils';
 
 import { renderWithProviders } from '#src/support/test-utils/hooksHelper';
 
-import { FiatAmountHeadline } from './FiatAmountHeadline';
 import { type MockSuiteState, mockInitialAppState } from '../../../../mocks/mockInitialAppState';
 
 type RenderParams = {

@@ -1,5 +1,6 @@
 import { memo } from 'react';
 
+import { ASSET_TABLE_CELL_PADDING } from '@suite/assets';
 import { HiddenPlaceholder } from '@suite/discreet-mode';
 import {
     selectDisplayedWalletAssetKeysOfNetwork,
@@ -12,7 +13,6 @@ import { asBaseCurrencyAmount } from '@suite-common/wallet-types';
 import { Table, Text } from '@trezor/components';
 import { BigNumber } from '@trezor/utils';
 
-import { ASSET_TABLE_CELL_PADDING } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { HomeAssetRowContainer } from './HomeAssetRowContainer';

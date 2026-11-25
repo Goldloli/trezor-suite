@@ -1,9 +1,9 @@
-import { selectLanguage } from '@suite/settings';
+import { useSelector } from 'react-redux';
+
+import { type SuiteSettingsRootState, selectLanguage } from '@suite/settings';
 import { useCurrencyAmountParts } from '@suite-common/formatters';
 import { Row, Text } from '@trezor/components';
 import { type BigNumber } from '@trezor/utils';
-
-import { useSelector } from '#src/hooks/suite/useSelector';
 
 type FiatAmountHeadlineProps = {
     fiatValue: BigNumber;
@@ -16,7 +16,7 @@ export const FiatAmountHeadline = ({
     isExact,
     'data-testid': dataTestId,
 }: FiatAmountHeadlineProps) => {
-    const locale = useSelector(selectLanguage);
+    const locale = useSelector((state: SuiteSettingsRootState) => selectLanguage(state));
 
     // Redacts the numbers itself in discreet mode.
     const {

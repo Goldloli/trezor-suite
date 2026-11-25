@@ -1,3 +1,4 @@
+import { ASSET_TABLE_LINE_GAP } from '@suite/assets';
 import { type AssetAccount } from '@suite-common/assets';
 import { selectAccountByKey } from '@suite-common/wallet-core';
 import { type Account } from '@suite-common/wallet-types';
@@ -5,7 +6,6 @@ import { CardList, Column, Text } from '@trezor/components';
 
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
 import { FormattedCryptoAmount } from '#src/components/suite/FormattedCryptoAmount';
-import { ASSET_TABLE_LINE_GAP } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { AssetDetailAccountIdentity } from './AssetDetailAccountIdentity';

@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 
+import { ASSET_TABLE_CELL_PADDING, ASSET_TABLE_LINE_GAP } from '@suite/assets';
 import { type TokenAddress, type TokenSymbol } from '@suite-common/tokens';
 import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { Column, Table } from '@trezor/components';
@@ -10,7 +11,6 @@ import { TrendTicker } from '#src/components/suite/Ticker/TrendTicker';
 import { AssetApyBadge } from './AssetApyBadge';
 import { AssetIdentity } from './AssetIdentity';
 import { AssetTableAmount } from './AssetTableAmount';
-import { ASSET_TABLE_CELL_PADDING, ASSET_TABLE_LINE_GAP } from './assetTableLayout';
 
 type AssetTableRowViewProps = {
     networkSymbol: NetworkSymbol;

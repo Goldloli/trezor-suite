@@ -1,10 +1,9 @@
+import { TotalBalanceCard, TotalBalanceHeadline } from '@suite/assets';
 import { Translation } from '@suite/intl';
 import { selectAccountAssetOverview, selectAccountFiatBalance } from '@suite-common/assets';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { Box, Column } from '@trezor/components';
 
-import { TotalBalanceCard } from '#src/components/wallet/assets/TotalBalanceCard';
-import { TotalBalanceHeadline } from '#src/components/wallet/assets/TotalBalanceHeadline';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { useAccountHeaderContext } from '#src/support/suite/AccountHeaderProvider';
 

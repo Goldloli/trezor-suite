@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
+import { ASSET_TABLE_CELL_PADDING, AssetTableExpandRow } from '@suite/assets';
 import { gotoThunk } from '@suite/router';
 import {
     HOME_ASSET_ROW_LIMIT,
@@ -16,11 +17,9 @@ import { Table } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
-import { AssetTableExpandRow } from '#src/components/wallet/assets/AssetTableExpandRow';
 import { AssetTableFilterHeader } from '#src/components/wallet/assets/AssetTableFilter';
 import { AssetTableFrame } from '#src/components/wallet/assets/AssetTableFrame';
 import { AssetTableSmallBalancesHiddenRow } from '#src/components/wallet/assets/AssetTableSmallBalancesHiddenRow';
-import { ASSET_TABLE_CELL_PADDING } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { DropdownRow } from '#src/views/wallet/tokens/DropdownRow';
 

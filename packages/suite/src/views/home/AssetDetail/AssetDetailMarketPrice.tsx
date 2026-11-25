@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
+import { FiatAmountHeadline } from '@suite/assets';
 import { Translation } from '@suite/intl';
 import {
     AssetPriceChart,
@@ -21,7 +22,6 @@ import { useServices } from '@trezor/dependency-injection';
 import { BigNumber } from '@trezor/utils';
 
 import { NoRatesTooltip } from '#src/components/suite/Ticker/NoRatesTooltip';
-import { FiatAmountHeadline } from '#src/components/wallet/assets/FiatAmountHeadline';
 import { useSelector } from '#src/hooks/suite/useSelector';
 
 import { AssetDetailPriceChange } from './AssetDetailPriceChange';

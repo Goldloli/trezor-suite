@@ -1,5 +1,6 @@
 import { memo } from 'react';
 
+import { ASSET_TABLE_LINE_GAP } from '@suite/assets';
 import { gotoThunk } from '@suite/router';
 import {
     selectWalletAssetContractAddress,
@@ -15,7 +16,6 @@ import { typographyStylesBase } from '@trezor/theme';
 import { PriceTicker } from '#src/components/suite/Ticker/PriceTicker';
 import { TrendTicker } from '#src/components/suite/Ticker/TrendTicker';
 import { AssetIdentity } from '#src/components/wallet/assets/AssetIdentity';
-import { ASSET_TABLE_LINE_GAP } from '#src/components/wallet/assets/assetTableLayout';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { HomeAssetBalanceContainer } from '#src/views/home/HomeAssetsTable/HomeAssetBalanceContainer';
 
