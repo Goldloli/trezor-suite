@@ -2,7 +2,9 @@ import {
     type AppSettingsState,
     appSettingsPersistWhitelist,
     appSettingsReducer,
+    disableTokenAddressCopyWarning,
     selectEarnStakingWorkerBaseUrl,
+    selectHasTokenAddressCopyWarningBeenDisabled,
     selectIsExperimentalFeatureEnabled,
     setEarnStakingWorkerEnvironment,
     toggleExperimentalFeature,
@@ -63,5 +65,23 @@ describe('appSettingsSlice earn staking worker base URL', () => {
 
     it('should keep the selected base URL across app restarts', () => {
         expect(appSettingsPersistWhitelist).toContain('earnStakingWorkerBaseUrl');
+    });
+});
+
+describe('appSettingsSlice token address copy warning', () => {
+    it('should warn initially', () => {
+        expect(selectHasTokenAddressCopyWarningBeenDisabled(asRootState(getInitialState()))).toBe(
+            false,
+        );
+    });
+
+    it('should stop warning once disabled', () => {
+        const state = appSettingsReducer(getInitialState(), disableTokenAddressCopyWarning());
+
+        expect(selectHasTokenAddressCopyWarningBeenDisabled(asRootState(state))).toBe(true);
+    });
+
+    it('should keep the warning disabled across app restarts', () => {
+        expect(appSettingsPersistWhitelist).toContain('hasTokenAddressCopyWarningBeenDisabled');
     });
 });

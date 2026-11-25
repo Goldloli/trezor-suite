@@ -14146,6 +14146,7 @@ __metadata:
     "@suite-native/link": "workspace:*"
     "@suite-native/navigation": "workspace:*"
     "@suite-native/price-chart": "workspace:*"
+    "@suite-native/settings": "workspace:*"
     "@suite-native/test-utils-store": "workspace:*"
     "@suite-native/toasts": "workspace:*"
     "@suite-native/tokens": "workspace:*"

@@ -18,6 +18,7 @@ export interface AppSettingsState {
     experimentalFeatures: ExperimentalFeature[];
     shouldShowAutoEjectAlert: boolean;
     hasAutoEjectAlertBeenDisplayed: boolean;
+    hasTokenAddressCopyWarningBeenDisabled: boolean;
     earnYieldWorkerBaseUrl?: EarnYieldWorkerBaseUrl;
     earnStakingWorkerBaseUrl?: EarnStakingWorkerBaseUrl;
 }
@@ -38,6 +39,7 @@ export const appSettingsInitialState: AppSettingsState = {
     experimentalFeatures: [],
     shouldShowAutoEjectAlert: false,
     hasAutoEjectAlertBeenDisplayed: false,
+    hasTokenAddressCopyWarningBeenDisabled: false,
     earnYieldWorkerBaseUrl: undefined,
     earnStakingWorkerBaseUrl: undefined,
 };
@@ -51,6 +53,7 @@ export const appSettingsPersistWhitelist: Array<keyof AppSettingsState> = [
     'areTestnetsEnabled',
     'experimentalFeatures',
     'hasAutoEjectAlertBeenDisplayed',
+    'hasTokenAddressCopyWarningBeenDisabled',
     'earnYieldWorkerBaseUrl',
     'earnStakingWorkerBaseUrl',
 ];
@@ -87,6 +90,9 @@ const appSettingsSlice = createSlice({
         },
         setHasAutoEjectAlertBeenDisplayed: (state, { payload }: PayloadAction<boolean>) => {
             state.hasAutoEjectAlertBeenDisplayed = payload;
+        },
+        disableTokenAddressCopyWarning: (state: AppSettingsState) => {
+            state.hasTokenAddressCopyWarningBeenDisabled = true;
         },
         setEarnWorkerEnvironment: (state, { payload }: PayloadAction<EarnYieldWorkerBaseUrl>) => {
             state.earnYieldWorkerBaseUrl = payload;
@@ -135,6 +141,9 @@ export const selectIsExperimentalFeatureEnabled = (
 export const selectHasAutoEjectAlertBeenDisplayed = (state: SettingsSliceRootState) =>
     state.appSettings.hasAutoEjectAlertBeenDisplayed;
 
+export const selectHasTokenAddressCopyWarningBeenDisabled = (state: SettingsSliceRootState) =>
+    state.appSettings.hasTokenAddressCopyWarningBeenDisabled;
+
 export const selectEarnYieldWorkerBaseUrl = (state: SettingsSliceRootState) =>
     state.appSettings.earnYieldWorkerBaseUrl;
 
@@ -165,6 +174,7 @@ export const {
     toggleExperimentalFeature,
     setShouldShowAutoEjectAlert,
     setHasAutoEjectAlertBeenDisplayed,
+    disableTokenAddressCopyWarning,
     setEarnWorkerEnvironment,
     setEarnStakingWorkerEnvironment,
 } = appSettingsSlice.actions;
