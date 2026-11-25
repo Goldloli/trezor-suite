@@ -133,6 +133,7 @@ export { selectRoutedAssetKey } from './src/views/home/AssetDetail/selectRoutedA
 export { EarnDashboard } from './src/components/earn/dashboard/EarnDashboard';
 export { TronClaim } from './src/components/earn/staking/tron/TronClaim';
 export { TronStakePageHeader } from './src/components/earn/staking/tron/TronStakePageHeader';
+export { LidoClaim } from './src/components/earn/staking/lido/LidoClaim';
 export { LidoFlowLayout } from './src/components/earn/staking/lido/LidoFlowLayout';
 export { LidoStake } from './src/components/earn/staking/lido/LidoStake';
 export { LidoStakePageHeader } from './src/components/earn/staking/lido/LidoStakePageHeader';

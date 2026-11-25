@@ -1,5 +1,6 @@
 export { EarnClaimPage } from './pages/EarnClaimPage';
 export { EarnDepositPage } from './pages/EarnDepositPage';
+export { EarnLidoClaimPage } from './pages/EarnLidoClaimPage';
 export { EarnLidoStakePage } from './pages/EarnLidoStakePage';
 export { EarnLidoUnstakePage } from './pages/EarnLidoUnstakePage';
 export { EarnPage } from './pages/EarnPage';

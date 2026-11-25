@@ -36,6 +36,7 @@ const EARN_ROUTES: Route['name'][] = [
     'earn-tron-claim',
     'earn-lido-stake',
     'earn-lido-unstake',
+    'earn-lido-claim',
 ];
 
 const SWAP_ROUTES: Route['name'][] = [

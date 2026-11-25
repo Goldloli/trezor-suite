@@ -12249,6 +12249,30 @@ export const messages = defineMessages({
         defaultMessage:
             'Lido is preparing your {displaySymbol}. You can claim it on the staking tab once the withdrawal is ready.',
     },
+    TR_EARN_LIDO_CLAIM_TITLE: {
+        id: 'TR_EARN_LIDO_CLAIM_TITLE',
+        defaultMessage: 'Claim {displaySymbol} from Lido',
+    },
+    TR_EARN_LIDO_CLAIM_AMOUNT: {
+        id: 'TR_EARN_LIDO_CLAIM_AMOUNT',
+        defaultMessage: 'Ready to claim',
+    },
+    TR_EARN_LIDO_CLAIM_EMPTY: {
+        id: 'TR_EARN_LIDO_CLAIM_EMPTY',
+        defaultMessage: 'No withdrawal is ready to claim yet.',
+    },
+    TR_EARN_LIDO_CLAIM_SUBMIT: {
+        id: 'TR_EARN_LIDO_CLAIM_SUBMIT',
+        defaultMessage: 'Claim {displaySymbol}',
+    },
+    TR_EARN_LIDO_CLAIM_COMPLETE: {
+        id: 'TR_EARN_LIDO_CLAIM_COMPLETE',
+        defaultMessage: 'Claimed',
+    },
+    TR_EARN_LIDO_CLAIM_COMPLETE_DESCRIPTION: {
+        id: 'TR_EARN_LIDO_CLAIM_COMPLETE_DESCRIPTION',
+        defaultMessage: 'Your {displaySymbol} is back in your account.',
+    },
     TR_EARN_LIDO_BACK_TO_STAKING: {
         id: 'TR_EARN_LIDO_BACK_TO_STAKING',
         defaultMessage: 'Back to staking',
