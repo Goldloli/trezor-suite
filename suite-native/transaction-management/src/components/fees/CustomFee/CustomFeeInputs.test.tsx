@@ -16,7 +16,7 @@ import {
 import { CustomFeeInputs, type CustomFeeInputsProps } from './CustomFeeInputs';
 import { type FeesFormType } from '../../..';
 import { ETH_ACCOUNT_KEY, getWalletState } from '../../../__fixtures__/walletState';
-import { useFeesForm } from '../../../hooks';
+import { type UseFeesFormProps, useFeesForm } from '../../../hooks';
 
 type State = FeesRootState;
 
@@ -202,6 +202,28 @@ describe('CustomFeeInputs', () => {
             await act(() => rerender({ accountKey: ETH_ACCOUNT_KEY, defaultFeePerUnit: '2' }));
 
             expect(input.props.value).toBe('');
+        });
+
+        it('should fill an untouched fee rate with a late default after another field is edited', async () => {
+            const { result, rerender } = await renderHookWithStoreProvider(useFeesForm, {
+                initialProps: { accountKey: ETH_ACCOUNT_KEY } as UseFeesFormProps,
+                services: { store },
+                preloadedState: defaultState,
+            });
+            const form = result.current;
+            // The fees sheet reads isDirty, which makes the form derive dirtiness for every field.
+            form.subscribe({ formState: { isDirty: true }, callback: () => {} });
+            const { getByTestId } = await renderCustomFeeInputs({
+                form,
+                props: { symbol: ethSymbol },
+            });
+            const feeRateInput = getByTestId('@transactionManagement/customFeePerUnit-input');
+            expect(feeRateInput.props.value).toBe('');
+
+            await userEvent.type(getByTestId('@transactionManagement/customFeeLimit-input'), '1');
+            await act(() => rerender({ accountKey: ETH_ACCOUNT_KEY, defaultFeePerUnit: '2' }));
+
+            expect(feeRateInput.props.value).toBe('2');
         });
     });
 });

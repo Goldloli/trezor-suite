@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 
 import type { TokenAddress } from '@suite-common/tokens';
@@ -33,16 +33,26 @@ export const getDefaultFeeLimit = (
     return referenceFee?.feeLimit;
 };
 
+const CUSTOM_FEE_FIELDS = [
+    'customFeePerUnit',
+    'customFeeLimit',
+    'customMaxFeePerGas',
+    'customMaxPriorityFeePerGas',
+] as const satisfies ReadonlyArray<keyof FeesFormValues>;
+
+type CustomFeeField = (typeof CUSTOM_FEE_FIELDS)[number];
+
 const syncCustomFeeDefaults = (
     networkType: NetworkType | undefined,
     form: UseFormReturn<FeesFormValues>,
     feePerUnit: string | undefined,
     referenceFee: PrecomposedTransactionFinal | undefined,
+    fieldsThatHeldValue: ReadonlySet<CustomFeeField>,
 ) => {
     const values = form.getValues();
-    // A field the user cleared is dirty and must stay empty while they retype it.
-    const isMissing = (name: keyof FeesFormValues) =>
-        !values[name] && !form.getFieldState(name).isDirty;
+    // An empty field that already held a value was cleared by the user and must stay empty
+    // while they retype it.
+    const isMissing = (name: CustomFeeField) => !values[name] && !fieldsThatHeldValue.has(name);
 
     if (isMissing('customFeePerUnit') && feePerUnit) {
         form.setValue('customFeePerUnit', feePerUnit);
@@ -127,8 +137,31 @@ export const useFeesForm = ({
         },
     });
 
+    // Form dirtiness cannot tell a cleared field from a mounted one that never had a value.
+    const fieldsThatHeldValueRef = useRef(new Set<CustomFeeField>());
+
     useEffect(() => {
-        syncCustomFeeDefaults(networkType, form, trimmedFeePerUnit, referenceFee);
+        const rememberFieldsWithValue = (values: Partial<FeesFormValues>) => {
+            CUSTOM_FEE_FIELDS.forEach(name => {
+                if (values[name]) fieldsThatHeldValueRef.current.add(name);
+            });
+        };
+        rememberFieldsWithValue(form.getValues());
+
+        return form.subscribe({
+            formState: { values: true },
+            callback: ({ values }) => rememberFieldsWithValue(values),
+        });
+    }, [form]);
+
+    useEffect(() => {
+        syncCustomFeeDefaults(
+            networkType,
+            form,
+            trimmedFeePerUnit,
+            referenceFee,
+            fieldsThatHeldValueRef.current,
+        );
     }, [networkType, trimmedFeePerUnit, referenceFee, form]);
 
     return form;

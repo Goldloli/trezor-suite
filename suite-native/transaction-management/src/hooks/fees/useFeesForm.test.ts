@@ -1,6 +1,12 @@
+import { configureStore } from '@reduxjs/toolkit';
+
 import { asNetworkSymbol } from '@suite-common/wallet-config';
 import { mockAccountKey } from '@suite-common/wallet-types/mocks';
-import { act, renderHookWithStoreProvider } from '@suite-native/test-utils-store';
+import {
+    act,
+    createStoreFromPreloadedState,
+    renderHookWithStoreProvider,
+} from '@suite-native/test-utils-store';
 
 import { type UseFeesFormProps, useFeesForm } from './useFeesForm';
 import { createFeeLevel } from '../../__fixtures__/feeLevels';
@@ -168,11 +174,45 @@ describe('useFeesForm', () => {
         const { result, rerender } = await renderUseFeesForm();
 
         await act(() => {
-            result.current.setValue('customFeePerUnit', '', { shouldDirty: true });
+            result.current.setValue('customFeePerUnit', '');
         });
         await act(() => rerender({ ...mockProps, defaultFeePerUnit: '30000000000' }));
 
         expect(result.current.getValues('customFeePerUnit')).toBe('');
+    });
+
+    it('should keep a cleared gas limit empty when the reference fee is refreshed', async () => {
+        const normal = createFeeLevel({ feeLimit: '21000', estimatedFeeLimit: '21000' });
+        const wallet = { ...getWalletState(), send: { feeLevels: { normal } } };
+        const initialState = createStoreFromPreloadedState({ wallet }).getState();
+        const store = configureStore({
+            reducer: (state = initialState, action) =>
+                action.type === 'refreshFeeLevels'
+                    ? {
+                          ...state,
+                          wallet: {
+                              ...state.wallet,
+                              send: { feeLevels: { normal: { ...normal } } },
+                          },
+                      }
+                    : state,
+            middleware: getDefaultMiddleware =>
+                getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
+        });
+        const { result } = await renderHookWithStoreProvider(useFeesForm, {
+            initialProps: { accountKey: FIXTURE_ACCOUNT_KEY, defaultFeeLevel: 'normal' },
+            services: { store },
+        });
+        expect(result.current.getValues('customFeeLimit')).toBe('21000');
+
+        await act(() => {
+            result.current.setValue('customFeeLimit', '');
+        });
+        await act(() => {
+            store.dispatch({ type: 'refreshFeeLevels' });
+        });
+
+        expect(result.current.getValues('customFeeLimit')).toBe('');
     });
 
     it('should fill an untouched custom fee rate when its default arrives late', async () => {
