@@ -3,6 +3,7 @@ export { AssetName, selectAssetNameText } from './AssetName';
 export { AssetSymbol } from './AssetSymbol';
 export { AssetValue } from './AssetValue';
 export { AssetTableExpandRow } from './AssetTableExpandRow';
+export { AssetTableFrame } from './AssetTableFrame';
 export {
     ASSET_TABLE_BALANCE_MAX_WIDTH,
     ASSET_TABLE_CELL_PADDING,

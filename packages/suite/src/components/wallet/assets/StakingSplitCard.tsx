@@ -1,5 +1,6 @@
 import { Translation } from '@suite/intl';
-import { type NetworkSymbol, getNetworkType } from '@suite-common/wallet-config';
+import { isStakeInsideAccountBalance } from '@suite-common/earn-staking';
+import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { Box, Card, Column, Row, SegmentedBar, Text, TextButton } from '@trezor/components';
 import { ArrowRightIcon } from '@trezor/icons';
 import { type Color } from '@trezor/theme';
@@ -34,10 +35,10 @@ export const StakingSplitCard = ({
     onViewAll,
     'data-testid': dataTestId,
 }: StakingSplitCardProps) => {
-    // A Cardano delegation leaves the whole balance spendable, so the rest is unstaked, not the
-    // only part available.
-    const isCardano = getNetworkType(networkSymbol) === 'cardano';
-    const unstakedColor = isCardano ? UNSTAKED_COLOR : AVAILABLE_COLOR;
+    // A stake inside the balance leaves the whole balance spendable, so the rest is unstaked, not
+    // the only part available.
+    const isStakeInsideBalance = isStakeInsideAccountBalance(networkSymbol);
+    const unstakedColor = isStakeInsideBalance ? UNSTAKED_COLOR : AVAILABLE_COLOR;
 
     return (
         <Box flex="1" minWidth={280}>
@@ -73,7 +74,7 @@ export const StakingSplitCard = ({
                                 >
                                     <Translation
                                         id={
-                                            isCardano
+                                            isStakeInsideBalance
                                                 ? 'TR_ASSET_DETAIL_UNSTAKED'
                                                 : 'TR_STAKE_AVAILABLE'
                                         }

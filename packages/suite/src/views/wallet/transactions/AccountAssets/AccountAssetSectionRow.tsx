@@ -1,4 +1,4 @@
-import { type AccountListSection, isStakeInsideAccountBalance } from '@suite-common/assets';
+import { type AccountListSection, getAccountListSectionAmount } from '@suite-common/assets';
 import { exhaustive } from '@trezor/type-utils';
 
 import { AccountAssetRow } from './AccountAssetRow';
@@ -10,25 +10,17 @@ type AccountAssetSectionRowProps = {
 
 /** The table row of one section of the account's asset list. */
 export const AccountAssetSectionRow = ({ section }: AccountAssetSectionRowProps) => {
+    const amount = getAccountListSectionAmount(section)?.amount;
+
     switch (section.type) {
         case 'account':
-            return (
-                <AccountAssetRow
-                    networkSymbol={section.account.symbol}
-                    amount={section.account.formattedBalance}
-                />
-            );
+            return <AccountAssetRow networkSymbol={section.account.symbol} amount={amount} />;
         case 'staking':
             return (
                 <AccountStakingRow
                     accountKey={section.account.key}
                     networkSymbol={section.account.symbol}
-                    // A stake inside the balance would repeat the coin's amount, so mobile shows none.
-                    amount={
-                        isStakeInsideAccountBalance(section.account.symbol)
-                            ? undefined
-                            : section.stakingCryptoBalance
-                    }
+                    amount={amount}
                 />
             );
         case 'token':
@@ -38,7 +30,7 @@ export const AccountAssetSectionRow = ({ section }: AccountAssetSectionRowProps)
                     contractAddress={section.token.contract}
                     tokenSymbol={section.token.symbol}
                     tokenDecimals={section.token.decimals}
-                    amount={section.token.balance ?? '0'}
+                    amount={amount}
                 />
             );
         // The tokens held at zero are listed as token sections, never as the group itself.

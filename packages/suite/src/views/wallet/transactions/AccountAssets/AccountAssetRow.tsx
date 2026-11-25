@@ -10,7 +10,7 @@ type AccountAssetRowProps = {
     contractAddress?: TokenAddress;
     tokenSymbol?: TokenSymbol;
     tokenDecimals?: number;
-    amount: string;
+    amount: string | undefined;
 };
 
 /** A Home asset row with what one account holds of its coin or of a token; it opens the asset. */

@@ -2,51 +2,21 @@ import { selectBaseCurrency, selectCurrentFiatRates } from '@suite-common/wallet
 import { type AccountKey } from '@suite-common/wallet-types';
 import { getFiatRateKey, isPositiveBalance, toFiatCurrency } from '@suite-common/wallet-utils';
 import { createWeakMapSelector } from '@trezor/redux-utils';
-import { BigNumber } from '@trezor/utils';
+import { type BigNumber } from '@trezor/utils';
 
 import {
-    type AccountListSection,
-    isStakeInsideAccountBalance,
+    getAccountListSectionAmount,
+    getAccountListSectionKey,
     selectAccountListSectionsWithVaultTokens,
 } from './accountListSections';
+import { type AssetTableState, selectSmallBalanceFiatThreshold } from './homeAssetTableSelectors';
 import {
-    type HomeAssetTableState,
     type SmallBalanceSummary,
-    selectSmallBalanceFiatThreshold,
-} from './homeAssetTableSelectors';
+    haveSameSmallBalanceSummary,
+    summarizeSmallBalances,
+} from './smallBalances';
 
-const createMemoizedSelector = createWeakMapSelector.withTypes<HomeAssetTableState>();
-
-/** What tells a section of an account's list from the others: its coin, its stake, or a token. */
-export const getAccountListSectionKey = (section: AccountListSection) => {
-    switch (section.type) {
-        case 'account':
-            return 'coin';
-        case 'token':
-            return section.token.contract;
-        default:
-            return section.type;
-    }
-};
-
-const getHeldAmount = (section: AccountListSection) => {
-    switch (section.type) {
-        case 'account':
-            return { amount: section.account.formattedBalance, tokenAddress: undefined };
-        case 'staking':
-            // A stake inside the balance is already counted with the coin.
-            return isStakeInsideAccountBalance(section.account.symbol)
-                ? undefined
-                : { amount: section.stakingCryptoBalance, tokenAddress: undefined };
-        case 'token':
-            return {
-                amount: section.token.balance ?? '0',
-                tokenAddress: section.token.contract,
-            };
-        default:
-            return undefined;
-    }
-};
+const createMemoizedSelector = createWeakMapSelector.withTypes<AssetTableState>();
 
 export type AccountSmallBalances = {
     /** The keys of the sections worth under a dollar, as `getAccountListSectionKey` gives them. */
@@ -54,25 +24,32 @@ export type AccountSmallBalances = {
     summary: SmallBalanceSummary | undefined;
 };
 
+// Rebuilt on every rate update, so a rebuild that lands on the same small balances is thrown away
+// and the table does not re-render for nothing.
+const haveSameAccountSmallBalances = (left: AccountSmallBalances, right: AccountSmallBalances) =>
+    left.keys.size === right.keys.size &&
+    [...left.keys].every(key => right.keys.has(key)) &&
+    haveSameSmallBalanceSummary(left.summary, right.summary);
+
 /**
  * What the account holds that is worth under a dollar, by the threshold the Home table uses. A
  * section without a rate is never small, so nothing is hidden by mistake.
  */
 export const selectAccountSmallBalances = createMemoizedSelector(
     [
-        (state: HomeAssetTableState, accountKey: AccountKey) =>
+        (state: AssetTableState, accountKey: AccountKey) =>
             selectAccountListSectionsWithVaultTokens(state, accountKey),
         selectCurrentFiatRates,
         selectBaseCurrency,
-        (state: HomeAssetTableState) => selectSmallBalanceFiatThreshold(state),
+        (state: AssetTableState) => selectSmallBalanceFiatThreshold(state),
     ],
     (sections, rates, baseCurrency, threshold): AccountSmallBalances => {
         const keys = new Set<string>();
-        let fiatValue = new BigNumber(0);
+        const fiatValues: BigNumber[] = [];
 
         if (threshold !== undefined) {
             sections.forEach(section => {
-                const held = getHeldAmount(section);
+                const held = getAccountListSectionAmount(section);
 
                 if (held === undefined || !isPositiveBalance(held.amount)) {
                     return;
@@ -86,14 +63,12 @@ export const selectAccountSmallBalances = createMemoizedSelector(
 
                 if (value?.lt(threshold)) {
                     keys.add(getAccountListSectionKey(section));
-                    fiatValue = fiatValue.plus(value);
+                    fiatValues.push(value);
                 }
             });
         }
 
-        return {
-            keys,
-            summary: keys.size === 0 ? undefined : { assetCount: keys.size, fiatValue },
-        };
+        return { keys, summary: summarizeSmallBalances(fiatValues) };
     },
+    { memoizeOptions: { resultEqualityCheck: haveSameAccountSmallBalances } },
 );

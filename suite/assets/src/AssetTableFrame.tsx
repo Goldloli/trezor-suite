@@ -1,8 +1,9 @@
 import { type ReactNode } from 'react';
 
-import { ASSET_TABLE_CELL_PADDING, ASSET_TABLE_COL_WIDTHS } from '@suite/assets';
 import { Translation } from '@suite/intl';
 import { Card, Table } from '@trezor/components';
+
+import { ASSET_TABLE_CELL_PADDING, ASSET_TABLE_COL_WIDTHS } from './assetTableLayout';
 
 type AssetTableFrameProps = {
     /** What heads the asset column: its label, and the table's menu where it has one. */

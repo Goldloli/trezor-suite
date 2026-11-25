@@ -9,7 +9,7 @@ import { type TokenInfo } from '@trezor/blockchain-link-types';
 import { FirmwareType, type StaticSessionId } from '@trezor/device-utils';
 
 import { selectAccountSmallBalances } from './accountSmallBalances';
-import { type HomeAssetTableState } from './homeAssetTableSelectors';
+import { type AssetTableState } from './homeAssetTableSelectors';
 
 const ALICE = 'aliceWallet@device:0' as StaticSessionId;
 const ETH = asNetworkSymbol('eth');
@@ -79,7 +79,7 @@ const createState = (rates: Record<string, { rate: number; usdRate: number }>) =
         },
         tokenDefinitions: { [ETH]: { coin: { data: [USDC, ENS], hide: [], show: [] } } },
         networks: { [ETH]: { symbol: ETH, name: 'Ethereum' } },
-    }) as unknown as HomeAssetTableState;
+    }) as unknown as AssetTableState;
 
 describe('the small balances of an account', () => {
     it('are what it holds worth under a dollar, with how many and how much', () => {
@@ -127,5 +127,19 @@ describe('the small balances of an account', () => {
         expect(selectAccountSmallBalances(state, account.key)).toBe(
             selectAccountSmallBalances(state, account.key),
         );
+    });
+
+    it('keep the result across a rate update that changes no small balance', () => {
+        const before = selectAccountSmallBalances(
+            createState({ ...mockRate(3000), ...mockRate(1, USDC), ...mockRate(20, ENS) }),
+            account.key,
+        );
+        // The ether moved, the ENS did not: the same small balances, worth the same.
+        const after = selectAccountSmallBalances(
+            createState({ ...mockRate(3100), ...mockRate(1, USDC), ...mockRate(20, ENS) }),
+            account.key,
+        );
+
+        expect(after).toBe(before);
     });
 });

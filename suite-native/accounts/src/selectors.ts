@@ -15,7 +15,7 @@ import {
 } from '@suite-common/suite-sync';
 import { type TokenDefinitionsRootState } from '@suite-common/token-definitions';
 import { type TokenAddress } from '@suite-common/tokens';
-import { type NetworkSymbol, isNetworkWithTokens } from '@suite-common/wallet-config';
+import { type NetworkSymbol } from '@suite-common/wallet-config';
 import {
     type AccountsRootState,
     type FiatRatesRootState,
@@ -279,11 +279,6 @@ export const selectFreshAccountAddress = createMemoizedSelector(
 export const selectIsAccountDiscoveryFailed = createMemoizedSelector(
     [selectAccountByKey],
     account => !!account && isAccountFailed(account),
-);
-
-export const selectAreTokensSupportedByAccount = createMemoizedSelector(
-    [selectAccountByKey],
-    account => !!account && isNetworkWithTokens(account.symbol),
 );
 
 export const selectHasDeviceAnyFailedAccountForNetworkSymbol = createMemoizedSelector(

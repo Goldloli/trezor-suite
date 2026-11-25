@@ -3,7 +3,10 @@ import { useSelector } from 'react-redux';
 
 import { FlashList } from '@shopify/flash-list';
 
-import { selectAccountListSectionsWithZeroBalanceGroup } from '@suite-common/assets';
+import {
+    getAccountListSectionKey,
+    selectAccountListSectionsWithZeroBalanceGroup,
+} from '@suite-common/assets';
 import { type AccountKey } from '@suite-common/wallet-types';
 import {
     AccountsListItem,
@@ -36,19 +39,6 @@ type ActiveTokensTabProps = AccountAssetsTabListProps & {
 
 type SectionItem = ReturnType<typeof selectAccountListSectionsWithZeroBalanceGroup>[number];
 type ActiveTokenListItem = SectionItem & { isFirst: boolean; isLast: boolean };
-
-const getItemKey = (item: ActiveTokenListItem): string => {
-    switch (item.type) {
-        case 'account':
-            return item.account.key;
-        case 'staking':
-            return `${item.account.key}-staking`;
-        case 'token':
-            return item.token.contract;
-        case 'zeroBalance':
-            return 'zero-balance';
-    }
-};
 
 export const ActiveTokensTab = ({
     accountKey,
@@ -162,7 +152,7 @@ export const ActiveTokensTab = ({
             style={applyStyle(listStyle)}
             contentContainerStyle={listContentStyle}
             data={listItems}
-            keyExtractor={getItemKey}
+            keyExtractor={getAccountListSectionKey}
             getItemType={item => item.type}
             renderItem={renderItem}
             ListHeaderComponent={ListHeaderComponent}

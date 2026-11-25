@@ -1,26 +1,24 @@
 import { useState } from 'react';
 
 import { events, injectDesktopAnalytics } from '@suite/analytics';
-import { ASSET_TABLE_CELL_PADDING, AssetTableExpandRow } from '@suite/assets';
+import { ASSET_TABLE_CELL_PADDING, AssetTableExpandRow, AssetTableFrame } from '@suite/assets';
 import { gotoThunk } from '@suite/router';
 import {
-    HOME_ASSET_ROW_LIMIT,
+    ASSET_TABLE_ROW_LIMIT,
     getAccountListSectionKey,
-    getHomeAssetRowLimit,
     selectAccountAssetOverview,
     selectAccountSmallBalances,
-    selectAreHomeAssetSmallBalancesDisplayed,
+    selectAreAssetTableSmallBalancesDisplayed,
 } from '@suite-common/assets';
-import { isNetworkWithTokens } from '@suite-common/wallet-config';
-import { selectAccountByKey, setAreHomeAssetSmallBalancesShown } from '@suite-common/wallet-core';
+import { selectAreTokensSupportedByAccount } from '@suite-common/wallet-core';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { Table } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
 import { AssetTableFilterHeader } from '#src/components/wallet/assets/AssetTableFilter';
-import { AssetTableFrame } from '#src/components/wallet/assets/AssetTableFrame';
 import { AssetTableSmallBalancesHiddenRow } from '#src/components/wallet/assets/AssetTableSmallBalancesHiddenRow';
+import { useAssetTableFolding } from '#src/components/wallet/assets/useAssetTableFolding';
 import { useSelector } from '#src/hooks/suite/useSelector';
 import { DropdownRow } from '#src/views/wallet/tokens/DropdownRow';
 
@@ -37,34 +35,23 @@ type AccountAssetTableProps = {
  */
 export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
-    const [isExpanded, setIsExpanded] = useState(false);
     const [isZeroBalanceOpen, setIsZeroBalanceOpen] = useState(false);
-    const hasTokens = useSelector(state => {
-        const networkSymbol = selectAccountByKey(state, accountKey)?.symbol;
-
-        return networkSymbol !== undefined && isNetworkWithTokens(networkSymbol);
-    });
+    const hasTokens = useSelector(state => selectAreTokensSupportedByAccount(state, accountKey));
     const { heldSections, zeroBalanceSections } = useSelector(state =>
         selectAccountAssetOverview(state, accountKey),
     );
     const smallBalances = useSelector(state => selectAccountSmallBalances(state, accountKey));
-    const areSmallBalancesShown = useSelector(selectAreHomeAssetSmallBalancesDisplayed);
+    const areSmallBalancesShown = useSelector(selectAreAssetTableSmallBalancesDisplayed);
     const rows = areSmallBalancesShown
         ? heldSections
         : heldSections.filter(
               section => !smallBalances.keys.has(getAccountListSectionKey(section)),
           );
-    const isFoldable = rows.length > HOME_ASSET_ROW_LIMIT;
-    const rowLimit = getHomeAssetRowLimit({ isFoldable, isExpanded });
+    const isFoldable = rows.length > ASSET_TABLE_ROW_LIMIT;
+    const { isExpanded, rowLimit, toggleExpanded, changeSmallBalances } = useAssetTableFolding({
+        isFoldable,
+    });
     const shownRows = rowLimit === undefined ? rows : rows.slice(0, rowLimit);
-
-    const changeSmallBalances = (areShown: boolean) => {
-        // Turning them on while the table is folded would otherwise change nothing on screen.
-        if (areShown) {
-            setIsExpanded(true);
-        }
-        dispatch(setAreHomeAssetSmallBalancesShown(areShown));
-    };
 
     // The account's own hidden tokens, so the list stays scoped to it and Back returns here.
     const openHiddenTokens = () => {
@@ -100,10 +87,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                 <AccountAssetSectionRow key={getAccountListSectionKey(section)} section={section} />
             ))}
             {isFoldable && (
-                <AssetTableExpandRow
-                    isExpanded={isExpanded}
-                    onToggle={() => setIsExpanded(!isExpanded)}
-                />
+                <AssetTableExpandRow isExpanded={isExpanded} onToggle={toggleExpanded} />
             )}
             {zeroBalanceSections.length > 0 && (
                 <Table.Row

@@ -1,6 +1,7 @@
 import {
     type StakingRootState,
     formatStakingAmount,
+    isStakeInsideAccountBalance,
     selectIsStakingAccountActive,
     selectStakingAccountAmount,
 } from '@suite-common/earn-staking';
@@ -10,11 +11,7 @@ import {
     selectTokenDefinitions,
 } from '@suite-common/token-definitions';
 import { type TokenAddress, type TokenInfoBranded } from '@suite-common/tokens';
-import {
-    type NetworkSymbol,
-    getNetworkType,
-    isNetworkWithTokens,
-} from '@suite-common/wallet-config';
+import { isNetworkWithTokens } from '@suite-common/wallet-config';
 import {
     type AccountsRootState,
     type FiatRatesRootState,
@@ -65,12 +62,44 @@ export type AccountListSection =
           tokens: TokenInfoBranded[];
       };
 
+/** What tells a section of an account's list from the others: its coin, its stake, or a token. */
+export const getAccountListSectionKey = (section: AccountListSection) => {
+    switch (section.type) {
+        case 'account':
+            return 'coin';
+        case 'token':
+            return section.token.contract;
+        default:
+            return section.type;
+    }
+};
+
+export type AccountListSectionAmount = {
+    amount: string;
+    /** Left out for the account's coin and its stake. */
+    tokenAddress: TokenAddress | undefined;
+};
+
 /**
- * Whether the account's stake sits inside its balance, as a Cardano delegation does: its staking
- * section repeats an amount the coin already holds, so mobile draws it without one.
+ * What the section's row shows the account holding. None for the zero-balance group, and none for
+ * a stake inside the balance (Cardano), which the coin already holds.
  */
-export const isStakeInsideAccountBalance = (networkSymbol: NetworkSymbol) =>
-    getNetworkType(networkSymbol) === 'cardano';
+export const getAccountListSectionAmount = (
+    section: AccountListSection,
+): AccountListSectionAmount | undefined => {
+    switch (section.type) {
+        case 'account':
+            return { amount: section.account.formattedBalance, tokenAddress: undefined };
+        case 'staking':
+            return isStakeInsideAccountBalance(section.account.symbol)
+                ? undefined
+                : { amount: section.stakingCryptoBalance, tokenAddress: undefined };
+        case 'token':
+            return { amount: section.token.balance ?? '0', tokenAddress: section.token.contract };
+        case 'zeroBalance':
+            return undefined;
+    }
+};
 
 export type GetAccountListSectionsParams = {
     account: Account;
@@ -208,6 +237,7 @@ export type AccountAssetOverview = {
     assetCount: number;
 };
 
+// A stake counts as held whether or not its row shows an amount: a Cardano delegation still gets a row.
 const isCoinSectionHeld = (section: AccountListSection) =>
     (section.type === 'account' && isPositiveBalance(section.account.formattedBalance)) ||
     (section.type === 'staking' && isPositiveBalance(section.stakingCryptoBalance));

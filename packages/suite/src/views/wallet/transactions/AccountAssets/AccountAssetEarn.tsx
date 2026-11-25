@@ -1,9 +1,4 @@
-import { getAvailableAmount, getStakingRatio } from '@suite-common/assets';
-import {
-    formatStakingAmount,
-    selectAccountCryptoBalanceWithStaking,
-    selectStakingAccountAmount,
-} from '@suite-common/earn-staking';
+import { selectAccountStakingSplit } from '@suite-common/assets';
 import { isSupportedStakingNetworkSymbol, selectAccountByKey } from '@suite-common/wallet-core';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { isPositiveBalance } from '@suite-common/wallet-utils';
@@ -21,24 +16,15 @@ type AccountAssetEarnProps = {
 export const AccountAssetEarn = ({ accountKey }: AccountAssetEarnProps) => {
     const openAccountStaking = useOpenAccountStaking({ from: 'account-overview' });
     const networkSymbol = useSelector(state => selectAccountByKey(state, accountKey)?.symbol);
-    const amount = useSelector(state => selectAccountCryptoBalanceWithStaking(state, accountKey));
-    const stakingAmount = useSelector(state =>
-        networkSymbol === undefined
-            ? '0'
-            : formatStakingAmount({
-                  amount: selectStakingAccountAmount(state, accountKey),
-                  networkSymbol,
-              }),
+    const { totalAmount, availableAmount, stakingAmount, stakingRatio } = useSelector(state =>
+        selectAccountStakingSplit(state, accountKey),
     );
-    const availableAmount = getAvailableAmount(amount, stakingAmount);
-    const stakingRatio = getStakingRatio(amount, stakingAmount) ?? 0;
     const { rate: apy } = useStakingRate({ symbol: networkSymbol, accountKey });
 
     if (
         networkSymbol === undefined ||
         !isSupportedStakingNetworkSymbol(networkSymbol) ||
-        !isPositiveBalance(amount) ||
-        availableAmount === undefined
+        !isPositiveBalance(totalAmount)
     ) {
         return null;
     }
