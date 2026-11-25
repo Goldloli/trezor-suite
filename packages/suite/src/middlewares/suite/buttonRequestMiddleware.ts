@@ -48,6 +48,7 @@ const SIGN_TX_ROUTES = [
     'earn-tron-unstake',
     'earn-tron-withdraw',
     'earn-tron-claim',
+    'earn-lido-stake',
 ] as const;
 
 const SIGN_TX_CONNECT_METHODS = [

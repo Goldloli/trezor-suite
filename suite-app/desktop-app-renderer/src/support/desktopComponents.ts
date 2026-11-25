@@ -10,6 +10,7 @@ import { ConnectPopupPage } from '@suite-app/module-connect-popup';
 import {
     EarnClaimPage,
     EarnDepositPage,
+    EarnLidoStakePage,
     EarnPage,
     EarnTronClaimPage,
     EarnTronRedirectPage,
@@ -87,6 +88,7 @@ export const desktopComponents: Record<PageName, ComponentType> = {
     'earn-tron-unstake': EarnTronUnstakePage,
     'earn-tron-withdraw': EarnTronWithdrawPage,
     'earn-tron-claim': EarnTronClaimPage,
+    'earn-lido-stake': EarnLidoStakePage,
     'apps-embedding-index': AppsEmbeddingPage,
     'suite-connect-popup': ConnectPopupPage,
     'notifications-index': NotificationPage,

@@ -135,6 +135,12 @@ export const routes = [
         params: earnParams,
     },
     {
+        name: 'earn-lido-stake',
+        pattern: '/earn/lido/stake',
+        app: 'earn-staking',
+        params: earnParams,
+    },
+    {
         name: 'apps-embedding-index',
         pattern: '/apps-embedding',
         app: 'apps-embedding',

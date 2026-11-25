@@ -12156,6 +12156,47 @@ export const messages = defineMessages({
         id: 'TR_EARN_TRON_UNSTAKE_TITLE',
         defaultMessage: 'Unstake',
     },
+    TR_EARN_LIDO_PAGE_TITLE: {
+        id: 'TR_EARN_LIDO_PAGE_TITLE',
+        defaultMessage: 'Lido staking',
+    },
+    TR_EARN_LIDO_STAKE_TITLE: {
+        id: 'TR_EARN_LIDO_STAKE_TITLE',
+        defaultMessage: 'Stake {displaySymbol} with Lido',
+    },
+    TR_EARN_LIDO_STAKE_AMOUNT: {
+        id: 'TR_EARN_LIDO_STAKE_AMOUNT',
+        defaultMessage: 'Amount to stake',
+    },
+    TR_EARN_LIDO_STAKE_AVAILABLE: {
+        id: 'TR_EARN_LIDO_STAKE_AVAILABLE',
+        defaultMessage: 'Available to stake',
+    },
+    TR_EARN_LIDO_STAKE_RECEIVING: {
+        id: 'TR_EARN_LIDO_STAKE_RECEIVING',
+        defaultMessage: 'You get approximately',
+    },
+    TR_EARN_LIDO_STAKE_SUBMIT: {
+        id: 'TR_EARN_LIDO_STAKE_SUBMIT',
+        defaultMessage: 'Stake {displaySymbol}',
+    },
+    TR_EARN_LIDO_STAKE_COMPLETE: {
+        id: 'TR_EARN_LIDO_STAKE_COMPLETE',
+        defaultMessage: 'Staked with Lido',
+    },
+    TR_EARN_LIDO_STAKE_COMPLETE_DESCRIPTION: {
+        id: 'TR_EARN_LIDO_STAKE_COMPLETE_DESCRIPTION',
+        defaultMessage:
+            'Your wstETH is in your account. It gains value against {displaySymbol} as staking rewards are added.',
+    },
+    TR_EARN_LIDO_BACK_TO_STAKING: {
+        id: 'TR_EARN_LIDO_BACK_TO_STAKING',
+        defaultMessage: 'Back to staking',
+    },
+    TR_EARN_LIDO_UNAVAILABLE: {
+        id: 'TR_EARN_LIDO_UNAVAILABLE',
+        defaultMessage: 'Lido staking is not available for this account.',
+    },
     TR_EARN_TRON_UNSTAKE_DESCRIPTION: {
         id: 'TR_EARN_TRON_UNSTAKE_DESCRIPTION',
         defaultMessage: 'You can withdraw your {displaySymbol} in 14 days.',

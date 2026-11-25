@@ -29,6 +29,8 @@ export const commonQueryKeys = {
     ],
     tronStakingStats: () => ['tron-staking-stats'],
     stakingProductInfo: (productId: string) => ['staking-product-info', productId],
+    lidoWithdrawalRequests: (accountKey: string) => ['lido-withdrawal-requests', accountKey],
+    lidoWithdrawalAllowance: (accountKey: string) => ['lido-withdrawal-allowance', accountKey],
     yieldOpportunity: (vaultId: string | undefined) => ['yield-opportunities', 'single', vaultId],
     yieldOpportunitiesList: (params: { limit: number }) => ['yield-opportunities', 'list', params],
     yieldOpportunitiesByAddress: (params: { outputToken?: string; network?: string }) => [
