@@ -92,6 +92,7 @@ export type {
 } from './stakingServices';
 export {
     selectIsStakingAccountDelegatedOutside,
+    selectIsStakingAccountStakedWithOfferedProvider,
     selectIsStakingManageableSymbol,
     selectIsStakingOperationDisabled,
     selectIsStakingPromotedSymbol,
@@ -117,6 +118,7 @@ export {
     selectIsStakingOperationPending,
     selectStakingAccountAmount,
     selectStakingAccountFiatAmount,
+    selectStakingAccountLockup,
     selectStakingAccountPositionDetails,
     selectStakingAccountPositionEntry,
     selectStakingPositionEntriesByAccount,
