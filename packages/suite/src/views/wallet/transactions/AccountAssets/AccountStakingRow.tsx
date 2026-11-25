@@ -12,7 +12,8 @@ import { useStakingRate } from '#src/hooks/earn/useStakingRate';
 type AccountStakingRowProps = {
     accountKey: AccountKey;
     networkSymbol: NetworkSymbol;
-    amount: string;
+    /** Left out for a stake inside the balance, which the coin's row already shows. */
+    amount: string | undefined;
 };
 
 /**

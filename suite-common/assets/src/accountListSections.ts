@@ -10,7 +10,11 @@ import {
     selectTokenDefinitions,
 } from '@suite-common/token-definitions';
 import { type TokenAddress, type TokenInfoBranded } from '@suite-common/tokens';
-import { isNetworkWithTokens } from '@suite-common/wallet-config';
+import {
+    type NetworkSymbol,
+    getNetworkType,
+    isNetworkWithTokens,
+} from '@suite-common/wallet-config';
 import {
     type AccountsRootState,
     type FiatRatesRootState,
@@ -60,6 +64,13 @@ export type AccountListSection =
           account: Account;
           tokens: TokenInfoBranded[];
       };
+
+/**
+ * Whether the account's stake sits inside its balance, as a Cardano delegation does: its staking
+ * section repeats an amount the coin already holds, so mobile draws it without one.
+ */
+export const isStakeInsideAccountBalance = (networkSymbol: NetworkSymbol) =>
+    getNetworkType(networkSymbol) === 'cardano';
 
 export type GetAccountListSectionsParams = {
     account: Account;

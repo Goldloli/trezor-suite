@@ -1,4 +1,4 @@
-import { type AccountListSection } from '@suite-common/assets';
+import { type AccountListSection, isStakeInsideAccountBalance } from '@suite-common/assets';
 import { exhaustive } from '@trezor/type-utils';
 
 import { AccountAssetRow } from './AccountAssetRow';
@@ -23,7 +23,12 @@ export const AccountAssetSectionRow = ({ section }: AccountAssetSectionRowProps)
                 <AccountStakingRow
                     accountKey={section.account.key}
                     networkSymbol={section.account.symbol}
-                    amount={section.stakingCryptoBalance}
+                    // A stake inside the balance would repeat the coin's amount, so mobile shows none.
+                    amount={
+                        isStakeInsideAccountBalance(section.account.symbol)
+                            ? undefined
+                            : section.stakingCryptoBalance
+                    }
                 />
             );
         case 'token':

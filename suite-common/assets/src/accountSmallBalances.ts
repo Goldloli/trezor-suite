@@ -6,6 +6,7 @@ import { BigNumber } from '@trezor/utils';
 
 import {
     type AccountListSection,
+    isStakeInsideAccountBalance,
     selectAccountListSectionsWithVaultTokens,
 } from './accountListSections';
 import {
@@ -33,7 +34,10 @@ const getHeldAmount = (section: AccountListSection) => {
         case 'account':
             return { amount: section.account.formattedBalance, tokenAddress: undefined };
         case 'staking':
-            return { amount: section.stakingCryptoBalance, tokenAddress: undefined };
+            // A stake inside the balance is already counted with the coin.
+            return isStakeInsideAccountBalance(section.account.symbol)
+                ? undefined
+                : { amount: section.stakingCryptoBalance, tokenAddress: undefined };
         case 'token':
             return {
                 amount: section.token.balance ?? '0',

@@ -36,6 +36,7 @@ global.ResizeObserver = class MockedResizeObserver {
 const DEVICE_STATE = '1stTestnetAddress@device_id:0' as StaticSessionId;
 
 const ETH = asNetworkSymbol('eth');
+const ADA = asNetworkSymbol('ada');
 
 const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as TokenAddress;
 const ONE_INCH = '0x111111111117dc0aa78b770fa6a738034120c302' as TokenAddress;
@@ -66,6 +67,27 @@ const HALF_ETH_STAKED = mockStakingPosition({
     unlocks: [],
 });
 
+const adaAccount = mockWalletAccount({
+    symbol: ADA,
+    deviceState: DEVICE_STATE,
+    descriptor: asAccountDescriptor('adaDescriptor'),
+    formattedBalance: '100',
+    balance: '100000000',
+});
+
+/** A Cardano delegation: the whole balance is staked and stays in it. */
+const ADA_DELEGATED = mockStakingPosition({
+    lockup: 'liquid',
+    balances: {
+        staked: amount('100000000'),
+        pending: amount('0'),
+        unstaking: amount('0'),
+        withdrawable: amount('0'),
+        rewards: amount('0'),
+    },
+    unlocks: [],
+});
+
 const otherEthAccount = mockWalletAccount({
     symbol: ETH,
     deviceState: DEVICE_STATE,
@@ -78,6 +100,7 @@ const PRICED_RATES = {
     [getFiatRateKey(ETH, 'usd')]: mockRate(3000),
     [getFiatRateKey(ETH, 'usd', USDC)]: mockRate(1),
     [getFiatRateKey(ETH, 'usd', ONE_INCH)]: mockRate(0.29),
+    [getFiatRateKey(ADA, 'usd')]: mockRate(0.5),
 };
 
 type GetStateOptions = {
@@ -93,9 +116,14 @@ const getState = (
 ): MockSuiteState => ({
     ...mockInitialAppState,
     earn: {
-        staking: mockStakingState({ positions: { [ethAccount.key]: [HALF_ETH_STAKED] } }),
+        staking: mockStakingState({
+            positions: {
+                [ethAccount.key]: [HALF_ETH_STAKED],
+                [adaAccount.key]: [ADA_DELEGATED],
+            },
+        }),
     },
-    networks: mockNetworksState([ETH]),
+    networks: mockNetworksState([ETH, ADA]),
     device: {
         ...mockInitialAppState.device,
         selectedDevice: mockSuiteDevice({ state: { staticSessionId: DEVICE_STATE } }),
@@ -111,7 +139,7 @@ const getState = (
         accounts,
         settings: {
             ...mockInitialAppState.wallet.settings,
-            enabledNetworks: [ETH],
+            enabledNetworks: [ETH, ADA],
             localCurrency: 'usd',
             areHomeAssetSmallBalancesShown: areSmallBalancesShown,
         },
@@ -139,7 +167,7 @@ const getState = (
 });
 
 const renderOverview = (
-    accounts: Account[],
+    accounts: [Account, ...Account[]],
     { rates = PRICED_RATES, ...options }: Partial<GetStateOptions> = {},
 ) => {
     const analytics = mockDesktopAnalytics();
@@ -155,7 +183,7 @@ const renderOverview = (
     renderWithProviders(
         { ...services, networks: { networkIcon: mockNetworkIcon() } },
         <AccountHeaderProvider>
-            <AccountAssetOverview accountKey={ethAccount.key} />
+            <AccountAssetOverview accountKey={accounts[0].key} />
         </AccountHeaderProvider>,
     );
 
@@ -216,6 +244,23 @@ describe('the account overview with the asset-first Home', () => {
 
         expect(screen.getByTestId('@wallet/account-asset/eth/staking')).toHaveTextContent(
             new RegExp(`${messages.TR_STAKE_STAKED.defaultMessage}.*3\\.2% APY`),
+        );
+    });
+
+    it('shows no amount on the row of a stake inside the balance, which the coin row already holds', () => {
+        renderOverview([adaAccount]);
+
+        const stakingRow = screen.getByTestId('@wallet/account-asset/ada/staking');
+        const balanceCell = (row: HTMLElement) => [...row.querySelectorAll('td')].at(-1);
+
+        expect(stakingRow).toHaveTextContent(messages.TR_STAKE_STAKED.defaultMessage);
+        expect(balanceCell(stakingRow)?.textContent).toBe('');
+        // 100 ADA at 50c, counted once.
+        expect(balanceCell(screen.getByTestId('@wallet/account-asset/ada/coin'))).toHaveTextContent(
+            /\$50\.00.*100(\.0+)? ADA/,
+        );
+        expect(screen.getByTestId('@wallet/account-assets/fiat-amount')).toHaveTextContent(
+            '$50.00',
         );
     });
 

@@ -1,6 +1,8 @@
 import { mockStakingState } from '@suite-common/earn-staking/mocks';
+import { stakingAmountSchema } from '@suite-common/earn-staking-common';
+import { mockStakingPosition } from '@suite-common/earn-staking-common/mocks';
 import { type TokenAddress } from '@suite-common/tokens';
-import { asNetworkSymbol } from '@suite-common/wallet-config';
+import { type NetworkSymbol, asNetworkSymbol } from '@suite-common/wallet-config';
 import { type Account, type AccountKey } from '@suite-common/wallet-types';
 import { getFiatRateKey } from '@suite-common/wallet-utils';
 import { type TokenInfo } from '@trezor/blockchain-link-types';
@@ -11,6 +13,7 @@ import { type HomeAssetTableState } from './homeAssetTableSelectors';
 
 const ALICE = 'aliceWallet@device:0' as StaticSessionId;
 const ETH = asNetworkSymbol('eth');
+const ADA = asNetworkSymbol('ada');
 const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as TokenAddress;
 const ENS = '0xc18360217d8f7ab5e7c516566761ea12ce7f9d72' as TokenAddress;
 
@@ -27,14 +30,42 @@ const account = {
     visible: true,
 } as unknown as Account;
 
+/** A Cardano account whose whole balance is delegated: the stake stays inside the balance. */
+const adaAccount = {
+    key: `adaDescriptor-ada-${ALICE}` as AccountKey,
+    deviceState: ALICE,
+    symbol: ADA,
+    networkType: 'cardano',
+    formattedBalance: '1',
+    tokens: [],
+    visible: true,
+} as unknown as Account;
+
+const ADA_DELEGATED = mockStakingPosition({
+    lockup: 'liquid',
+    balances: {
+        staked: stakingAmountSchema.parse('1000000'),
+        pending: stakingAmountSchema.parse('0'),
+        unstaking: stakingAmountSchema.parse('0'),
+        withdrawable: stakingAmountSchema.parse('0'),
+        rewards: stakingAmountSchema.parse('0'),
+    },
+    unlocks: [],
+});
+
 // A current rate carries the dollar rate too; in dollars the two are the same number.
-const mockRate = (rate: number, contract?: TokenAddress, usdRate = rate) => ({
-    [getFiatRateKey(ETH, 'usd', contract)]: { rate, usdRate },
+const mockRate = (
+    rate: number,
+    contract?: TokenAddress,
+    usdRate = rate,
+    symbol: NetworkSymbol = ETH,
+) => ({
+    [getFiatRateKey(symbol, 'usd', contract)]: { rate, usdRate },
 });
 
 const createState = (rates: Record<string, { rate: number; usdRate: number }>) =>
     ({
-        earn: { staking: mockStakingState() },
+        earn: { staking: mockStakingState({ positions: { [adaAccount.key]: [ADA_DELEGATED] } }) },
         device: {
             selectedDevice: {
                 state: { staticSessionId: ALICE },
@@ -42,8 +73,8 @@ const createState = (rates: Record<string, { rate: number; usdRate: number }>) =
             },
         },
         wallet: {
-            accounts: [account],
-            settings: { localCurrency: 'usd', enabledNetworks: [ETH] },
+            accounts: [account, adaAccount],
+            settings: { localCurrency: 'usd', enabledNetworks: [ETH, ADA] },
             fiat: { current: rates, lastWeek: {}, historic: {} },
         },
         tokenDefinitions: { [ETH]: { coin: { data: [USDC, ENS], hide: [], show: [] } } },
@@ -63,6 +94,16 @@ describe('the small balances of an account', () => {
         expect([...keys]).toEqual([ENS]);
         expect(summary?.assetCount).toBe(1);
         expect(summary?.fiatValue.toFixed()).toBe('0.2');
+    });
+
+    it('count a stake inside the balance once, with the coin', () => {
+        // 1 ADA at 50c, all of it delegated.
+        const state = createState({ ...mockRate(0.5, undefined, 0.5, ADA) });
+        const { keys, summary } = selectAccountSmallBalances(state, adaAccount.key);
+
+        expect([...keys]).toEqual(['coin']);
+        expect(summary?.assetCount).toBe(1);
+        expect(summary?.fiatValue.toFixed()).toBe('0.5');
     });
 
     it('never count what has no rate, so nothing is hidden by mistake', () => {
