@@ -50,8 +50,8 @@ const syncCustomFeeDefaults = (
     fieldsThatHeldValue: ReadonlySet<CustomFeeField>,
 ) => {
     const values = form.getValues();
-    const shouldFillDefault = (name: CustomFeeField) =>
-        !values[name] && !fieldsThatHeldValue.has(name);
+    const wasCleared = (name: CustomFeeField) => !values[name] && fieldsThatHeldValue.has(name);
+    const shouldFillDefault = (name: CustomFeeField) => !values[name] && !wasCleared(name);
 
     if (shouldFillDefault('customFeePerUnit') && feePerUnit) {
         form.setValue('customFeePerUnit', feePerUnit);
@@ -59,7 +59,7 @@ const syncCustomFeeDefaults = (
     const defaultFeeLimit = getDefaultFeeLimit(networkType, referenceFee);
     const shouldUpdateFeeLimit =
         networkType === 'tron'
-            ? !!defaultFeeLimit
+            ? !wasCleared('customFeeLimit') && !!defaultFeeLimit
             : shouldFillDefault('customFeeLimit') && !!defaultFeeLimit;
     if (shouldFillDefault('customMaxFeePerGas') && referenceFee?.maxFeePerGas) {
         form.setValue('customMaxFeePerGas', referenceFee.maxFeePerGas);

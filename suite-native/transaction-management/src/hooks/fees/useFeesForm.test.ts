@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import { asNetworkSymbol } from '@suite-common/wallet-config';
+import type { AccountKey } from '@suite-common/wallet-types';
 import { mockAccountKey } from '@suite-common/wallet-types/mocks';
 import {
     act,
@@ -181,9 +182,19 @@ describe('useFeesForm', () => {
         expect(result.current.getValues('customFeePerUnit')).toBe('');
     });
 
-    it('should keep a cleared gas limit empty when the reference fee is refreshed', async () => {
+    const TRX_ACCOUNT_KEY = mockAccountKey({ symbol: asNetworkSymbol('trx'), descriptor: 'trx1' });
+
+    const renderWithRefreshableFeeLevels = async (accountKey: AccountKey) => {
         const normal = createFeeLevel({ feeLimit: '21000', estimatedFeeLimit: '21000' });
-        const wallet = { ...getWalletState(), send: { feeLevels: { normal } } };
+        const walletState = getWalletState();
+        const wallet = {
+            ...walletState,
+            accounts: [
+                ...walletState.accounts,
+                { ...walletState.accounts[0], key: TRX_ACCOUNT_KEY, symbol: 'trx' },
+            ],
+            send: { feeLevels: { normal } },
+        };
         const initialState = createStoreFromPreloadedState({ wallet }).getState();
         const store = configureStore({
             reducer: (state = initialState, action) =>
@@ -192,7 +203,7 @@ describe('useFeesForm', () => {
                           ...state,
                           wallet: {
                               ...state.wallet,
-                              send: { feeLevels: { normal: { ...normal } } },
+                              send: { feeLevels: { normal: { ...normal, ...action.payload } } },
                           },
                       }
                     : state,
@@ -200,19 +211,41 @@ describe('useFeesForm', () => {
                 getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
         });
         const { result } = await renderHookWithStoreProvider(useFeesForm, {
-            initialProps: { accountKey: FIXTURE_ACCOUNT_KEY, defaultFeeLevel: 'normal' },
+            initialProps: { accountKey, defaultFeeLevel: 'normal' },
             services: { store },
         });
-        expect(result.current.getValues('customFeeLimit')).toBe('21000');
+        const refreshFeeLevels = (payload?: Partial<typeof normal>) =>
+            act(() => {
+                store.dispatch({ type: 'refreshFeeLevels', payload });
+            });
 
-        await act(() => {
-            result.current.setValue('customFeeLimit', '');
-        });
-        await act(() => {
-            store.dispatch({ type: 'refreshFeeLevels' });
-        });
+        return { result, refreshFeeLevels };
+    };
 
-        expect(result.current.getValues('customFeeLimit')).toBe('');
+    it.each([
+        ['Ethereum', FIXTURE_ACCOUNT_KEY],
+        ['Tron', TRX_ACCOUNT_KEY],
+    ])(
+        'should keep a cleared %s fee limit empty when the reference fee is refreshed',
+        async (_, accountKey) => {
+            const { result, refreshFeeLevels } = await renderWithRefreshableFeeLevels(accountKey);
+            expect(result.current.getValues('customFeeLimit')).toBe('21000');
+
+            await act(() => {
+                result.current.setValue('customFeeLimit', '');
+            });
+            await refreshFeeLevels();
+
+            expect(result.current.getValues('customFeeLimit')).toBe('');
+        },
+    );
+
+    it('should keep following the Tron fee limit estimate while the field has a value', async () => {
+        const { result, refreshFeeLevels } = await renderWithRefreshableFeeLevels(TRX_ACCOUNT_KEY);
+
+        await refreshFeeLevels({ estimatedFeeLimit: '42000' });
+
+        expect(result.current.getValues('customFeeLimit')).toBe('42000');
     });
 
     it('should fill an untouched custom fee rate when its default arrives late', async () => {
