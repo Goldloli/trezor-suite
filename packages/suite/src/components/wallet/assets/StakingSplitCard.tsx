@@ -5,8 +5,8 @@ import { ArrowRightIcon } from '@trezor/icons';
 import { type Color } from '@trezor/theme';
 
 import { BaseCurrencyValue } from '#src/components/suite/BaseCurrencyValue';
-import { useFormatApy } from '#src/hooks/earn/useFormatApy';
 
+import { StakingRateText } from './StakingRateText';
 import { StakingSplitLegendSquare } from './StakingSplitLegendSquare';
 
 const AVAILABLE_COLOR = 'elementFillAccentVioletBold' satisfies Color;
@@ -34,8 +34,6 @@ export const StakingSplitCard = ({
     onViewAll,
     'data-testid': dataTestId,
 }: StakingSplitCardProps) => {
-    const formatApy = useFormatApy();
-
     // A Cardano delegation leaves the whole balance spendable, so the rest is unstaked, not the
     // only part available.
     const isCardano = getNetworkType(networkSymbol) === 'cardano';
@@ -103,18 +101,7 @@ export const StakingSplitCard = ({
                             <Row gap={12} alignItems="center">
                                 {apy != null && apy > 0 && (
                                     <Text typographyStyle="body-sm" intent="brand">
-                                        {/* Tron pays its rate as an APR, as its Earn modal says. */}
-                                        {getNetworkType(networkSymbol) === 'tron' ? (
-                                            <Translation
-                                                id="TR_EARN_APR_APPROX"
-                                                values={{ aprPercent: formatApy(apy) }}
-                                            />
-                                        ) : (
-                                            <Translation
-                                                id="TR_EARN_YIELD_BADGE_RATE"
-                                                values={{ apy: formatApy(apy) }}
-                                            />
-                                        )}
+                                        <StakingRateText networkSymbol={networkSymbol} apy={apy} />
                                     </Text>
                                 )}
                                 <Text typographyStyle="body-md-strong">

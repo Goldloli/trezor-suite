@@ -4,8 +4,8 @@ import { type AccountKey } from '@suite-common/wallet-types';
 import { isApyAvailable } from '@suite-common/wallet-utils';
 import { Badge, Row } from '@trezor/components';
 
-import { YieldBadge } from '#src/components/earn/YieldBadge/YieldBadge';
 import { AssetTableRowView } from '#src/components/wallet/assets/AssetTableRowView';
+import { StakingRateText } from '#src/components/wallet/assets/StakingRateText';
 import { useOpenAccountStaking } from '#src/components/wallet/assets/useOpenAccountStaking';
 import { useStakingRate } from '#src/hooks/earn/useStakingRate';
 
@@ -40,7 +40,9 @@ export const AccountStakingRow = ({
                         <Translation id="TR_STAKE_STAKED" />
                     </Badge>
                     {apy != null && isApyAvailable(apy) && (
-                        <YieldBadge apy={apy} variant="active" />
+                        <Badge intent="brand" size="small">
+                            <StakingRateText networkSymbol={networkSymbol} apy={apy} />
+                        </Badge>
                     )}
                 </Row>
             }
