@@ -12,7 +12,7 @@ type AccountStakingRowProps = {
 
 /** A Home asset row with what one account stakes of its coin; it opens the account's Staking. */
 export const AccountStakingRow = ({ networkSymbol, amount }: AccountStakingRowProps) => {
-    const openAccountStaking = useOpenAccountStaking('account-overview');
+    const openAccountStaking = useOpenAccountStaking({ from: 'account-overview' });
 
     return (
         <AssetTableRowView

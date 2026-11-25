@@ -5,8 +5,13 @@ import { type NetworkSymbol } from '@suite-common/wallet-config';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
+type UseOpenAccountStakingParams = {
+    /** Where the navigation starts, as analytics names it. */
+    from: NavigateFlowFrom;
+};
+
 /** Opens the selected account's Staking and reports where the user went there from. */
-export const useOpenAccountStaking = (from: NavigateFlowFrom) => {
+export const useOpenAccountStaking = ({ from }: UseOpenAccountStakingParams) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
 
     return (networkSymbol: NetworkSymbol) => {

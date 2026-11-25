@@ -12,8 +12,13 @@ type OpenAssetParams = {
     contractAddress?: TokenAddress;
 };
 
+type UseOpenAssetParams = {
+    /** Where the navigation starts, as analytics names it. */
+    from: NavigateFlowFrom;
+};
+
 /** Opens an asset's detail and reports where the user went there from. */
-export const useOpenAsset = (from: NavigateFlowFrom) => {
+export const useOpenAsset = ({ from }: UseOpenAssetParams) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
 
     return ({ networkSymbol, contractAddress }: OpenAssetParams) => {

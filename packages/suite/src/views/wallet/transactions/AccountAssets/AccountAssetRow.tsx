@@ -21,7 +21,7 @@ export const AccountAssetRow = ({
     tokenDecimals,
     amount,
 }: AccountAssetRowProps) => {
-    const openAsset = useOpenAsset('account-overview');
+    const openAsset = useOpenAsset({ from: 'account-overview' });
 
     return (
         <AssetTableRowView

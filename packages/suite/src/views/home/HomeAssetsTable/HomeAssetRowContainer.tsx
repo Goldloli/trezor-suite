@@ -22,7 +22,7 @@ export const HomeAssetRowContainer = ({
     hasBorderTop,
     assetNameTestId,
 }: HomeAssetRowContainerProps) => {
-    const openAsset = useOpenAsset('home-asset-table');
+    const openAsset = useOpenAsset({ from: 'home-asset-table' });
     const networkSymbol = useSelector(state => selectWalletAssetNetworkSymbol(state, assetKey));
     const contractAddress = useSelector(state => selectWalletAssetContractAddress(state, assetKey));
     const tokenSymbol = useSelector(state => selectWalletAssetTokenSymbol(state, assetKey));

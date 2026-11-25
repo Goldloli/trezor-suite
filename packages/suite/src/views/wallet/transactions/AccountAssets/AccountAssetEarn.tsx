@@ -19,7 +19,7 @@ type AccountAssetEarnProps = {
 
 /** The account's coin split as the asset detail splits the wallet's; View all opens Staking. */
 export const AccountAssetEarn = ({ accountKey }: AccountAssetEarnProps) => {
-    const openAccountStaking = useOpenAccountStaking('account-overview');
+    const openAccountStaking = useOpenAccountStaking({ from: 'account-overview' });
     const networkSymbol = useSelector(state => selectAccountByKey(state, accountKey)?.symbol);
     const amount = useSelector(state => selectAccountCryptoBalanceWithStaking(state, accountKey));
     const stakingAmount = useSelector(state =>
