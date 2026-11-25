@@ -80,13 +80,13 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
         searchedSections?.filter(section => listedKeys.has(getAccountListSectionKey(section))) ??
         (rowLimit === undefined ? rows : rows.slice(0, rowLimit));
 
-    // The account's own hidden tokens, so the list stays scoped to it and Back returns here.
+    // The account's own hidden tokens, as asset rows; the account path keeps the list scoped to it.
     const openHiddenTokens = () => {
         analytics.report({
             type: events.navigateFlowEvent.name,
             payload: { action: 'navigate', type: 'hidden-tokens', from: 'account-overview' },
         });
-        dispatch(gotoThunk({ routeName: 'wallet-tokens-hidden', preserveParams: true }));
+        dispatch(gotoThunk({ routeName: 'wallet-asset-hidden-tokens', preserveParams: true }));
     };
 
     if (heldSections.length === 0 && zeroBalanceSections.length === 0) {

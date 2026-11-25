@@ -1,7 +1,12 @@
 import { type ComponentType } from 'react';
 
 import { type PageName } from '@suite/router';
-import { NftsPage, TokensPage, WalletDetailsPage } from '@suite-app/module-account-detail';
+import {
+    AccountHiddenTokensPage,
+    NftsPage,
+    TokensPage,
+    WalletDetailsPage,
+} from '@suite-app/module-account-detail';
 import { NotificationPage } from '@suite-app/module-activity-center';
 import { AppsEmbeddingPage } from '@suite-app/module-apps-embedding';
 import { AssetDetailPage } from '@suite-app/module-assets';
@@ -102,6 +107,7 @@ export const desktopComponents: Record<PageName, ComponentType> = {
     'wallet-anonymize': WalletAnonymizePage,
     'wallet-coinjoin': WalletCoinjoinPage,
     'wallet-tokens': TokensPage,
+    'wallet-asset-hidden-tokens': AccountHiddenTokensPage,
     'wallet-nfts': NftsPage,
     'wallet-trading-buy': TradingBuyFormPage,
     'wallet-trading-buy-detail': TradingBuyDetailPage,

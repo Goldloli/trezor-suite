@@ -437,7 +437,7 @@ describe('the account overview with the asset-first Home', () => {
         fireEvent.click(screen.getByTestId('@wallet/account-assets/empty/hidden-tokens'));
 
         expect(suiteRouterHistory.navigate).toHaveBeenCalledWith(
-            expect.objectContaining({ pathname: getRoute('wallet-tokens-hidden')?.pattern }),
+            expect.objectContaining({ pathname: getRoute('wallet-asset-hidden-tokens')?.pattern }),
         );
     });
 
@@ -493,7 +493,9 @@ describe('the account overview with the asset-first Home', () => {
             fireEvent.click(screen.getByTestId('@dashboard/home-asset/hidden-tokens'));
 
             expect(suiteRouterHistory.navigate).toHaveBeenCalledWith(
-                expect.objectContaining({ pathname: getRoute('wallet-tokens-hidden')?.pattern }),
+                expect.objectContaining({
+                    pathname: getRoute('wallet-asset-hidden-tokens')?.pattern,
+                }),
             );
         });
 

@@ -161,6 +161,11 @@ export const webComponents: Record<PageName, LazyExoticComponent<ComponentType>>
             /* webpackChunkName: "wallet" */ '@suite-app/module-account-detail/pages/TokensPage'
         ).then(({ TokensPage }) => ({ default: TokensPage })),
     ),
+    'wallet-asset-hidden-tokens': lazy(() =>
+        import(
+            /* webpackChunkName: "wallet" */ '@suite-app/module-account-detail/pages/AccountHiddenTokensPage'
+        ).then(({ AccountHiddenTokensPage }) => ({ default: AccountHiddenTokensPage })),
+    ),
     'wallet-nfts': lazy(() =>
         import(
             /* webpackChunkName: "wallet" */ '@suite-app/module-account-detail/pages/NftsPage'

@@ -404,6 +404,13 @@ export const routes = [
         params: walletParams,
         isNestedRoute: true,
     },
+    // The account's hidden tokens as asset rows; the asset-first counterpart of `wallet-tokens-hidden`.
+    {
+        name: 'wallet-asset-hidden-tokens',
+        pattern: '/accounts/hidden-tokens',
+        app: 'wallet',
+        params: walletParams,
+    },
     {
         name: 'wallet-tokens-inactive',
         pattern: '/accounts/tokens/inactive',
