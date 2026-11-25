@@ -50,22 +50,21 @@ const syncCustomFeeDefaults = (
     fieldsThatHeldValue: ReadonlySet<CustomFeeField>,
 ) => {
     const values = form.getValues();
-    // An empty field that already held a value was cleared by the user and must stay empty
-    // while they retype it.
-    const isMissing = (name: CustomFeeField) => !values[name] && !fieldsThatHeldValue.has(name);
+    const shouldFillDefault = (name: CustomFeeField) =>
+        !values[name] && !fieldsThatHeldValue.has(name);
 
-    if (isMissing('customFeePerUnit') && feePerUnit) {
+    if (shouldFillDefault('customFeePerUnit') && feePerUnit) {
         form.setValue('customFeePerUnit', feePerUnit);
     }
     const defaultFeeLimit = getDefaultFeeLimit(networkType, referenceFee);
     const shouldUpdateFeeLimit =
         networkType === 'tron'
             ? !!defaultFeeLimit
-            : isMissing('customFeeLimit') && !!defaultFeeLimit;
-    if (isMissing('customMaxFeePerGas') && referenceFee?.maxFeePerGas) {
+            : shouldFillDefault('customFeeLimit') && !!defaultFeeLimit;
+    if (shouldFillDefault('customMaxFeePerGas') && referenceFee?.maxFeePerGas) {
         form.setValue('customMaxFeePerGas', referenceFee.maxFeePerGas);
     }
-    if (isMissing('customMaxPriorityFeePerGas') && referenceFee?.maxPriorityFeePerGas) {
+    if (shouldFillDefault('customMaxPriorityFeePerGas') && referenceFee?.maxPriorityFeePerGas) {
         form.setValue('customMaxPriorityFeePerGas', referenceFee.maxPriorityFeePerGas);
     }
     if (shouldUpdateFeeLimit) {
