@@ -21,6 +21,7 @@ export const AccountAssetSectionRow = ({ section }: AccountAssetSectionRowProps)
         case 'staking':
             return (
                 <AccountStakingRow
+                    accountKey={section.account.key}
                     networkSymbol={section.account.symbol}
                     amount={section.stakingCryptoBalance}
                 />

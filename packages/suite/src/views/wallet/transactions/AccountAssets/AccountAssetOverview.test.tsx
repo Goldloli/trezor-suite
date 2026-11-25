@@ -211,6 +211,14 @@ describe('the account overview with the asset-first Home', () => {
         expect(screen.getByTestId('@wallet/account-assets/earn/view-all')).toBeInTheDocument();
     });
 
+    it('shows the rate the stake earns on the staking row, as the mobile row does', () => {
+        renderOverview([ethAccount], { ethStakingApy: 3.2 });
+
+        expect(screen.getByTestId('@wallet/account-asset/eth/staking')).toHaveTextContent(
+            new RegExp(`${messages.TR_STAKE_STAKED.defaultMessage}.*3\\.2% APY`),
+        );
+    });
+
     it('keeps the tokens it holds none of in a group that opens, out of the rows and the count', () => {
         const withEmptyToken = {
             ...ethAccount,
