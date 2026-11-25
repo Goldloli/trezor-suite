@@ -17,7 +17,10 @@ import {
 } from '@suite-common/earn-staking';
 import { mockStakingDeviceAccess, mockStakingQueryClient } from '@suite-common/earn-staking/mocks';
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports -- this oracle runs the real products beside the real core, which only the app package may import together
-import { createStakingProductsCompositionRoot } from '@suite-common/earn-staking-products';
+import {
+    type StakingProductsCompositionRootDeps,
+    createStakingProductsCompositionRoot,
+} from '@suite-common/earn-staking-products';
 import type { NetworksRootState } from '@suite-common/networks';
 import { mockNetworksState } from '@suite-common/networks/mocks';
 import type { QueryClientDep } from '@suite-common/react-query';
@@ -42,6 +45,7 @@ import {
     mockSolanaStakingAccount,
     mockTronStakingAccount,
 } from '@suite-common/wallet-types/mocks';
+import { createMockDeps } from '@trezor/dependency-injection';
 import { asNetworkSymbols } from '@trezor/network-module-types';
 import { BigNumber } from '@trezor/utils';
 
@@ -134,7 +138,12 @@ const selectedDevice = mockSuiteDevice({
 });
 
 const createState = async () => {
-    const adapters = createStakingProductsCompositionRoot();
+    const adapters = createStakingProductsCompositionRoot(
+        createMockDeps<StakingProductsCompositionRootDeps>({
+            getTrezorConnect: null,
+            fetch: null,
+        }),
+    );
     const productInfo = {
         'eth:eth:everstake:pooled': {
             rate: 3.08,

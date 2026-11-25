@@ -5,12 +5,14 @@ import { curatedProvider } from './curated';
 import { everstakeProvider } from './everstake';
 import { externalProvider } from './external';
 import { fivebinariesProvider } from './fivebinaries';
+import { lidoProvider } from './lido';
 import { luganodesProvider } from './luganodes';
 import { p2pProvider } from './p2p';
 
 export const stakingProviders: readonly StakingProvider[] = [
     everstakeProvider,
     fivebinariesProvider,
+    lidoProvider,
     luganodesProvider,
     p2pProvider,
     externalProvider,

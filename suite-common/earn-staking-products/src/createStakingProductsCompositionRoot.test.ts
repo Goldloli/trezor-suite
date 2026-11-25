@@ -8,7 +8,10 @@ import {
 import { createMockDeps } from '@trezor/dependency-injection';
 import { asNetworkSymbol } from '@trezor/network-module-types';
 
-import { createStakingProductsCompositionRoot } from './createStakingProductsCompositionRoot';
+import {
+    type StakingProductsCompositionRootDeps,
+    createStakingProductsCompositionRoot,
+} from './createStakingProductsCompositionRoot';
 import { SOLANA_EVERSTAKE_NATIVE_PRODUCT_MESSAGE_SYSTEM_FEATURES } from './products/solana/everstake-native/messageSystemFeatures';
 import {
     type SolanaEverstakeNativeProductDeps,
@@ -17,13 +20,22 @@ import {
 import { createSolanaExternalNativeProduct } from './products/solana/external-native/product';
 import { everstakeProvider } from './providers/everstake';
 
+const createAdapters = () =>
+    createStakingProductsCompositionRoot(
+        createMockDeps<StakingProductsCompositionRootDeps>({
+            getTrezorConnect: null,
+            fetch: null,
+        }),
+    );
+
 describe('createStakingProductsCompositionRoot', () => {
-    const adapters = createStakingProductsCompositionRoot();
+    const adapters = createAdapters();
 
     it('registers the Ethereum, Solana, Cardano and Tron products for mainnet testnet networks', () => {
         expect(adapters.map(adapter => adapter.descriptor.id)).toEqual([
             'eth:eth:everstake:pooled',
             'thod:thod:everstake:pooled',
+            'eth:eth:lido:liquid',
             'sol:sol:everstake:native',
             'sol:sol:external:native',
             'dsol:dsol:everstake:native',
@@ -116,7 +128,7 @@ describe('Solana products', () => {
 });
 
 describe('Cardano products', () => {
-    const cardanoProducts = createStakingProductsCompositionRoot().filter(
+    const cardanoProducts = createAdapters().filter(
         product => product.descriptor.networkSymbol === 'ada',
     );
 
@@ -170,7 +182,7 @@ describe('Cardano products', () => {
 describe('mobile platform support', () => {
     it('manages the Everstake Ethereum and Solana products and shows every other one read-only', () => {
         const supportByProduct = Object.fromEntries(
-            createStakingProductsCompositionRoot().map(
+            createAdapters().map(
                 ({ descriptor }) => [descriptor.id, descriptor.platforms.mobile] as const,
             ),
         );
@@ -178,6 +190,7 @@ describe('mobile platform support', () => {
         expect(supportByProduct).toEqual({
             'eth:eth:everstake:pooled': { access: 'manage' },
             'thod:thod:everstake:pooled': { access: 'manage' },
+            'eth:eth:lido:liquid': { access: 'read-only' },
             'sol:sol:everstake:native': { access: 'manage' },
             'dsol:dsol:everstake:native': { access: 'manage' },
             'sol:sol:external:native': { access: 'read-only' },

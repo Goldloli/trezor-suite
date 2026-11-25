@@ -5,6 +5,7 @@ import { curatedProvider } from './curated';
 import { everstakeProvider } from './everstake';
 import { externalProvider } from './external';
 import { fivebinariesProvider } from './fivebinaries';
+import { lidoProvider } from './lido';
 import { luganodesProvider } from './luganodes';
 import { p2pProvider } from './p2p';
 import {
@@ -18,6 +19,7 @@ describe('stakingProviders', () => {
         expect(stakingProviders).toEqual([
             everstakeProvider,
             fivebinariesProvider,
+            lidoProvider,
             luganodesProvider,
             p2pProvider,
             externalProvider,
@@ -75,8 +77,8 @@ describe('getStakingProvider', () => {
     });
 
     it('throws for an unknown id', () => {
-        expect(() => getStakingProvider(stakingProviderIdSchema.parse('lido'))).toThrow(
-            'Unknown staking provider: lido',
+        expect(() => getStakingProvider(stakingProviderIdSchema.parse('rocketpool'))).toThrow(
+            'Unknown staking provider: rocketpool',
         );
     });
 });

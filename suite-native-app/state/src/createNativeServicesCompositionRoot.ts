@@ -131,7 +131,10 @@ export const createNativeServicesCompositionRoot = (deps: NativeAppDeps): Native
 
     const staking = createStakingCompositionRoot({
         platform: 'mobile',
-        adapters: createStakingProductsCompositionRoot(),
+        adapters: createStakingProductsCompositionRoot({
+            getTrezorConnect: deps.getTrezorConnect,
+            fetch: globalThis.fetch.bind(globalThis),
+        }),
         deviceAccess: createNativeStakingDeviceAccess({
             getTrezorConnect: deps.getTrezorConnect,
         }),
