@@ -3,7 +3,7 @@ import { type Account } from '@suite-common/wallet-types';
 import { useServices } from '@trezor/dependency-injection';
 import { injectDispatch } from '@trezor/redux-utils';
 
-export type LidoRoute = 'wallet-staking' | 'earn-lido-stake';
+export type LidoRoute = 'wallet-staking' | 'earn-lido-stake' | 'earn-lido-unstake';
 
 export const useNavigateToLidoRoute = (account: Account) => {
     const { dispatch } = useServices(injectDispatch);

@@ -125,6 +125,13 @@ export const webComponents: Record<PageName, LazyExoticComponent<ComponentType>>
             default: EarnLidoStakePage,
         })),
     ),
+    'earn-lido-unstake': lazy(() =>
+        import(
+            /* webpackChunkName: "earn" */ '@suite-app/module-earn/pages/EarnLidoUnstakePage'
+        ).then(({ EarnLidoUnstakePage }) => ({
+            default: EarnLidoUnstakePage,
+        })),
+    ),
     'apps-embedding-index': lazy(() =>
         import(
             /* webpackChunkName: "apps-embedding" */ '@suite-app/module-apps-embedding/pages/AppsEmbeddingPage'

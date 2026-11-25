@@ -12189,6 +12189,66 @@ export const messages = defineMessages({
         defaultMessage:
             'Your wstETH is in your account. It gains value against {displaySymbol} as staking rewards are added.',
     },
+    TR_EARN_LIDO_UNSTAKE_QUEUE_OPTION: {
+        id: 'TR_EARN_LIDO_UNSTAKE_QUEUE_OPTION',
+        defaultMessage: 'Withdraw with Lido',
+    },
+    TR_EARN_LIDO_UNSTAKE_SWAP_OPTION: {
+        id: 'TR_EARN_LIDO_UNSTAKE_SWAP_OPTION',
+        defaultMessage: 'Swap now',
+    },
+    TR_EARN_LIDO_UNSTAKE_QUEUE_DESCRIPTION: {
+        id: 'TR_EARN_LIDO_UNSTAKE_QUEUE_DESCRIPTION',
+        defaultMessage:
+            'Lido pays out {displaySymbol} at its own rate, with no trading fee. A withdrawal takes about {days, plural, one {# day} other {# days}}, earns no rewards while it waits and cannot be cancelled.',
+    },
+    TR_EARN_LIDO_UNSTAKE_QUEUE_DESCRIPTION_WITHOUT_DAYS: {
+        id: 'TR_EARN_LIDO_UNSTAKE_QUEUE_DESCRIPTION_WITHOUT_DAYS',
+        defaultMessage:
+            'Lido pays out {displaySymbol} at its own rate, with no trading fee. A withdrawal takes a few days, earns no rewards while it waits and cannot be cancelled.',
+    },
+    TR_EARN_LIDO_UNSTAKE_SWAP_DESCRIPTION: {
+        id: 'TR_EARN_LIDO_UNSTAKE_SWAP_DESCRIPTION',
+        defaultMessage:
+            'Swap wstETH for {displaySymbol} right away at the market rate. Compare the offer with the Lido rate before you confirm: the market rate can be lower.',
+    },
+    TR_EARN_LIDO_UNSTAKE_AMOUNT: {
+        id: 'TR_EARN_LIDO_UNSTAKE_AMOUNT',
+        defaultMessage: 'Amount to unstake',
+    },
+    TR_EARN_LIDO_UNSTAKE_AVAILABLE: {
+        id: 'TR_EARN_LIDO_UNSTAKE_AVAILABLE',
+        defaultMessage: 'Staked',
+    },
+    TR_EARN_LIDO_UNSTAKE_RECEIVING: {
+        id: 'TR_EARN_LIDO_UNSTAKE_RECEIVING',
+        defaultMessage: 'Lido pays out approximately',
+    },
+    TR_EARN_LIDO_UNSTAKE_APPROVE_STEP: {
+        id: 'TR_EARN_LIDO_UNSTAKE_APPROVE_STEP',
+        defaultMessage: 'Approve wstETH',
+    },
+    TR_EARN_LIDO_UNSTAKE_APPROVE_SUBMIT: {
+        id: 'TR_EARN_LIDO_UNSTAKE_APPROVE_SUBMIT',
+        defaultMessage: 'Approve',
+    },
+    TR_EARN_LIDO_UNSTAKE_REQUEST_STEP: {
+        id: 'TR_EARN_LIDO_UNSTAKE_REQUEST_STEP',
+        defaultMessage: 'Request the withdrawal',
+    },
+    TR_EARN_LIDO_UNSTAKE_REQUEST_SUBMIT: {
+        id: 'TR_EARN_LIDO_UNSTAKE_REQUEST_SUBMIT',
+        defaultMessage: 'Request withdrawal',
+    },
+    TR_EARN_LIDO_UNSTAKE_COMPLETE: {
+        id: 'TR_EARN_LIDO_UNSTAKE_COMPLETE',
+        defaultMessage: 'Withdrawal requested',
+    },
+    TR_EARN_LIDO_UNSTAKE_COMPLETE_DESCRIPTION: {
+        id: 'TR_EARN_LIDO_UNSTAKE_COMPLETE_DESCRIPTION',
+        defaultMessage:
+            'Lido is preparing your {displaySymbol}. You can claim it on the staking tab once the withdrawal is ready.',
+    },
     TR_EARN_LIDO_BACK_TO_STAKING: {
         id: 'TR_EARN_LIDO_BACK_TO_STAKING',
         defaultMessage: 'Back to staking',
@@ -12196,6 +12256,10 @@ export const messages = defineMessages({
     TR_EARN_LIDO_UNAVAILABLE: {
         id: 'TR_EARN_LIDO_UNAVAILABLE',
         defaultMessage: 'Lido staking is not available for this account.',
+    },
+    TR_EARN_LIDO_VALUE_UNKNOWN: {
+        id: 'TR_EARN_LIDO_VALUE_UNKNOWN',
+        defaultMessage: 'The wstETH rate could not be loaded. Check your connection and try again.',
     },
     TR_EARN_TRON_UNSTAKE_DESCRIPTION: {
         id: 'TR_EARN_TRON_UNSTAKE_DESCRIPTION',

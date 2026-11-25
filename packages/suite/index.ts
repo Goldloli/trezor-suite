@@ -136,6 +136,7 @@ export { TronStakePageHeader } from './src/components/earn/staking/tron/TronStak
 export { LidoFlowLayout } from './src/components/earn/staking/lido/LidoFlowLayout';
 export { LidoStake } from './src/components/earn/staking/lido/LidoStake';
 export { LidoStakePageHeader } from './src/components/earn/staking/lido/LidoStakePageHeader';
+export { LidoUnstake } from './src/components/earn/staking/lido/LidoUnstake';
 export { useEarnRouteAccount } from './src/components/earn/utils/useEarnRouteAccount';
 export { AccountNotExists } from './src/components/wallet/WalletLayout/AccountException/AccountNotExists';
 export { TronStake } from './src/components/earn/staking/tron/TronStake';
