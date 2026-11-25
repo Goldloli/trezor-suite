@@ -35,7 +35,7 @@ type ActiveTokensTabProps = AccountAssetsTabListProps & {
 };
 
 type SectionItem = ReturnType<typeof selectAccountListSectionsWithZeroBalanceGroup>[number];
-type ActiveTokenListItem = SectionItem & { isLast: boolean };
+type ActiveTokenListItem = SectionItem & { isFirst: boolean; isLast: boolean };
 
 const getItemKey = (item: ActiveTokenListItem): string => {
     switch (item.type) {
@@ -83,7 +83,11 @@ export const ActiveTokensTab = ({
         () =>
             activeTokensSections
                 .filter(item => item.type !== 'staking' || isStakingDisplayed)
-                .map((item, index, arr) => ({ ...item, isLast: index === arr.length - 1 })),
+                .map((item, index, arr) => ({
+                    ...item,
+                    isFirst: index === 0,
+                    isLast: index === arr.length - 1,
+                })),
         [activeTokensSections, isStakingDisplayed],
     );
 

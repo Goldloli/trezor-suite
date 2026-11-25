@@ -39,7 +39,7 @@ export type AccountListSectionsRootState = AccountsRootState &
 
 const createMemoizedSelector = createWeakMapSelector.withTypes<AccountListSectionsRootState>();
 
-export type AccountListSection = (
+export type AccountListSection =
     | {
           type: 'account';
           account: Account;
@@ -59,11 +59,7 @@ export type AccountListSection = (
           type: 'zeroBalance';
           account: Account;
           tokens: TokenInfoBranded[];
-      }
-) & {
-    isFirst?: boolean;
-    isLast?: boolean;
-};
+      };
 
 export type GetAccountListSectionsParams = {
     account: Account;
@@ -107,8 +103,6 @@ export const getAccountListSections = ({
     sections.push({
         type: 'account',
         account,
-        isLast: !hasAnyKnownTokens && !isStakingActive,
-        isFirst: true,
         hasAnyKnownTokens,
     });
 
@@ -117,7 +111,6 @@ export const getAccountListSections = ({
             type: 'staking',
             account,
             stakingCryptoBalance,
-            isLast: !hasAnyKnownTokens,
         });
     }
 
@@ -138,12 +131,11 @@ export const getAccountListSections = ({
         const tokensToShow = tokensWithBalance
             .filter(isListed)
             .sort((a, b) => getTokenFiatValue(b) - getTokenFiatValue(a));
-        tokensToShow.forEach((token, index) => {
+        tokensToShow.forEach(token => {
             sections.push({
                 type: 'token',
                 account,
                 token: token as TokenInfoBranded,
-                isLast: index === tokensToShow.length - 1 && zeroBalanceTokens.length === 0,
             });
         });
 
