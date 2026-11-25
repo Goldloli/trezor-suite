@@ -28,7 +28,8 @@ type AssetTableFilterProps = {
     smallBalances: SmallBalanceSummary | undefined;
     onGroupingChange?: (grouping: HomeAssetGrouping) => void;
     onSmallBalancesChange: (areShown: boolean) => void;
-    onOpenHiddenTokens: () => void;
+    /** Left out where there are no tokens to hide, as on a network without them. */
+    onOpenHiddenTokens?: () => void;
 };
 
 const AssetTableFilter = ({
@@ -88,6 +89,7 @@ const AssetTableFilter = ({
                         {
                             label: <Translation id="TR_HIDDEN_TOKENS" />,
                             iconRight: CaretRightIcon,
+                            isHidden: onOpenHiddenTokens === undefined,
                             hasSeparatorBefore:
                                 grouping !== undefined || smallBalances !== undefined,
                             onClick: onOpenHiddenTokens,
@@ -114,11 +116,16 @@ const AssetTableFilter = ({
 
 export const AssetTableFilterHeader = (props: AssetTableFilterProps) => {
     const isMenuAvailable = useSelector(selectIsHomeAssetTableMenuAvailable);
+    // A menu with nothing in it is not offered.
+    const hasMenuItems =
+        props.grouping !== undefined ||
+        props.smallBalances !== undefined ||
+        props.onOpenHiddenTokens !== undefined;
 
     return (
         <Row gap={8} alignItems="center">
             <Translation id="TR_ASSET" />
-            {isMenuAvailable && <AssetTableFilter {...props} />}
+            {isMenuAvailable && hasMenuItems && <AssetTableFilter {...props} />}
         </Row>
     );
 };

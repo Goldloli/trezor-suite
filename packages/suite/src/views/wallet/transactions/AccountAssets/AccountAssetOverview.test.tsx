@@ -6,7 +6,7 @@ import { initialState as selectedAccountInitialState } from '@suite/account';
 import { type DesktopAnalyticsDep, events } from '@suite/analytics';
 import { mockDesktopAnalytics } from '@suite/analytics/mocks';
 import { messages } from '@suite/intl';
-import { type SuiteRouterHistoryDep } from '@suite/router';
+import { type SuiteRouterHistoryDep, getRoute } from '@suite/router';
 import { mockSuiteRouterHistory } from '@suite/router/mocks';
 import { mockStakingState } from '@suite-common/earn-staking/mocks';
 import { stakingAmountSchema } from '@suite-common/earn-staking-common';
@@ -143,12 +143,13 @@ const renderOverview = (
     { rates = PRICED_RATES, ...options }: Partial<GetStateOptions> = {},
 ) => {
     const analytics = mockDesktopAnalytics();
+    const suiteRouterHistory = { ...mockSuiteRouterHistory(), navigate: jest.fn() };
     const { services } = createTestCompositionRoot<
         { services: DesktopAnalyticsDep & SuiteRouterHistoryDep },
         MockSuiteState
     >({
         preloadedState: getState(accounts, { rates, ...options }),
-        services: () => ({ analytics, suiteRouterHistory: mockSuiteRouterHistory() }),
+        services: () => ({ analytics, suiteRouterHistory }),
     });
 
     renderWithProviders(
@@ -158,7 +159,7 @@ const renderOverview = (
         </AccountHeaderProvider>,
     );
 
-    return { analytics };
+    return { analytics, suiteRouterHistory };
 };
 
 const rowTestIds = () =>
@@ -307,6 +308,17 @@ describe('the account overview with the asset-first Home', () => {
 
             expect(analytics.report).toHaveBeenCalledTimes(1);
             expect(analytics.report).toHaveBeenCalledWith(navigateEvent({ type: 'hidden-tokens' }));
+        });
+
+        it("opens the account's own hidden tokens, not the whole wallet's", () => {
+            const { suiteRouterHistory } = renderOverview([ethAccount]);
+
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/grouping'));
+            fireEvent.click(screen.getByTestId('@dashboard/home-asset/hidden-tokens'));
+
+            expect(suiteRouterHistory.navigate).toHaveBeenCalledWith(
+                expect.objectContaining({ pathname: getRoute('wallet-tokens-hidden')?.pattern }),
+            );
         });
 
         it('reports opening the stake as going to Earn', () => {

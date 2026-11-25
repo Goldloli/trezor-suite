@@ -11,7 +11,8 @@ import {
     selectAccountSmallBalances,
     selectAreHomeAssetSmallBalancesDisplayed,
 } from '@suite-common/assets';
-import { setAreHomeAssetSmallBalancesShown } from '@suite-common/wallet-core';
+import { isNetworkWithTokens } from '@suite-common/wallet-config';
+import { selectAccountByKey, setAreHomeAssetSmallBalancesShown } from '@suite-common/wallet-core';
 import { type AccountKey } from '@suite-common/wallet-types';
 import { Table } from '@trezor/components';
 import { useServices } from '@trezor/dependency-injection';
@@ -38,6 +39,11 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
     const { analytics, dispatch } = useServices(injectDesktopAnalytics, injectDispatch);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isZeroBalanceOpen, setIsZeroBalanceOpen] = useState(false);
+    const hasTokens = useSelector(state => {
+        const networkSymbol = selectAccountByKey(state, accountKey)?.symbol;
+
+        return networkSymbol !== undefined && isNetworkWithTokens(networkSymbol);
+    });
     const { heldSections, zeroBalanceSections } = useSelector(state =>
         selectAccountAssetOverview(state, accountKey),
     );
@@ -60,12 +66,13 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
         dispatch(setAreHomeAssetSmallBalancesShown(areShown));
     };
 
+    // The account's own hidden tokens, so the list stays scoped to it and Back returns here.
     const openHiddenTokens = () => {
         analytics.report({
             type: events.navigateFlowEvent.name,
             payload: { action: 'navigate', type: 'hidden-tokens', from: 'account-overview' },
         });
-        dispatch(gotoThunk({ routeName: 'suite-hidden-tokens' }));
+        dispatch(gotoThunk({ routeName: 'wallet-tokens-hidden', preserveParams: true }));
     };
 
     if (heldSections.length === 0 && zeroBalanceSections.length === 0) {
@@ -79,7 +86,7 @@ export const AccountAssetTable = ({ accountKey }: AccountAssetTableProps) => {
                     areSmallBalancesShown={areSmallBalancesShown}
                     smallBalances={smallBalances.summary}
                     onSmallBalancesChange={changeSmallBalances}
-                    onOpenHiddenTokens={openHiddenTokens}
+                    onOpenHiddenTokens={hasTokens ? openHiddenTokens : undefined}
                 />
             }
             data-testid="@wallet/account-assets/table"
