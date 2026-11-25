@@ -196,12 +196,12 @@ describe('CustomFeeInputs', () => {
             });
             const { getByTestId } = await renderCustomFeeInputs({ form: result.current });
             const input = getByTestId('@transactionManagement/customFeePerUnit-input');
-            expect(input.props.value).toBe('1');
+            expect(input).toHaveDisplayValue('1');
 
             await userEvent.clear(input);
             await act(() => rerender({ accountKey: ETH_ACCOUNT_KEY, defaultFeePerUnit: '2' }));
 
-            expect(input.props.value).toBe('');
+            expect(input).toHaveDisplayValue('');
         });
 
         it('should fill an untouched fee rate with a late default after another field is edited', async () => {
@@ -218,12 +218,12 @@ describe('CustomFeeInputs', () => {
                 props: { symbol: ethSymbol },
             });
             const feeRateInput = getByTestId('@transactionManagement/customFeePerUnit-input');
-            expect(feeRateInput.props.value).toBe('');
+            expect(feeRateInput).toHaveDisplayValue('');
 
             await userEvent.type(getByTestId('@transactionManagement/customFeeLimit-input'), '1');
             await act(() => rerender({ accountKey: ETH_ACCOUNT_KEY, defaultFeePerUnit: '2' }));
 
-            expect(feeRateInput.props.value).toBe('2');
+            expect(feeRateInput).toHaveDisplayValue('2');
         });
     });
 });
