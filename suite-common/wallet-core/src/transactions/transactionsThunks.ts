@@ -39,6 +39,7 @@ import TrezorConnect, {
 } from '@trezor/connect';
 import { asCoinSymbol } from '@trezor/connect-common';
 import { LOVELACE_UNIT } from '@trezor/network-cardano/constants';
+import { Calldata } from '@trezor/network-ethereum-suite-common';
 import {
     SOLANA_BLOCKHASH_VALIDITY_BLOCKS,
     SOLANA_SLOT_TIME_MS,
@@ -442,10 +443,15 @@ export const addFakePendingEvmTxThunk = createThunk<
         const deadline = FAKE_TX_TTL_SECONDS / rawFeeInfo!.blockTime;
 
         const sig = getEvmTransactionTextSignature(precomposedForm.transactionData);
+        // A Lido withdrawal request hands the queue the wstETH it names.
+        const isLidoWithdrawalRequest =
+            Calldata.evm.lido.requestWithdrawalsWstETH.decode(precomposedForm.transactionData) !==
+            null;
         const transfersToken =
             !precomposedForm.transactionData ||
             sig === 'transfer' ||
-            isEvmYieldTxByTextSignature(sig);
+            isEvmYieldTxByTextSignature(sig) ||
+            isLidoWithdrawalRequest;
 
         const fakeTx = buildFakePendingEvmTx({
             precomposedTransaction,
